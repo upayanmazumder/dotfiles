@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Solanum (Pomodoro background service)
+Comment=Starts Solanum as a background GApplication service so the pomodoro timer survives and notifications fire even when its window is closed. Toggle the window with SUPER+SHIFT+P or `solanum`.
+Exec=solanum --gapplication-service
+Icon=org.gnome.Solanum
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

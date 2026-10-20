@@ -1,0 +1,13 @@
+# Re-evaluate the power profile whenever AC is plugged/unplugged.
+#
+# Fires power-profile-switch.service rather than calling powerprofilesctl
+# directly: udev RUN+= runs in a short-lived, minimal environment with a hard
+# timeout and no D-Bus session plumbing, so invoking a D-Bus client from here
+# is unreliable. Handing off to systemd with --no-block keeps udev's event
+# queue moving and lets the unit's After=/Wants= ordering on
+# power-profiles-daemon.service actually apply.
+#
+# ACTION=="change" is the event the mains adapter emits on plug/unplug;
+# "add" is included so a late-probing adapter at boot is also caught.
+SUBSYSTEM=="power_supply", KERNEL=="ADP1", ACTION=="change", RUN+="/usr/bin/systemctl --no-block start power-profile-switch.service"
+SUBSYSTEM=="power_supply", KERNEL=="ADP1", ACTION=="add", RUN+="/usr/bin/systemctl --no-block start power-profile-switch.service"

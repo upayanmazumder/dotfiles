@@ -1,0 +1,9 @@
+[Unit]
+Description=Auto-discover and two-way sync every top-level Google Drive folder
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=PATH=/usr/bin:/bin
+ExecStart=%h/.local/bin/rclone-sync-all.sh

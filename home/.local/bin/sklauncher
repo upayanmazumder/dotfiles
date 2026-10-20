@@ -1,0 +1,3 @@
+#!/bin/sh
+# SKLauncher launcher (user-local install)
+exec java -jar "$HOME/.local/share/sklauncher/SKLauncher.jar" "$@"

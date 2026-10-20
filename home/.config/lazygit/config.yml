@@ -1,0 +1,41 @@
+# Catppuccin Mocha theme, matching kitty/oh-my-posh/btop/fastfetch across
+# this repo. JetBrainsMono Nerd Font is installed (bootstrap/linux/packages/
+# fonts.txt), so nerd font icons are safe to enable.
+gui:
+    nerdFontsVersion: "3"
+    showIcons: true
+    showFileIcons: true
+    border: rounded
+    theme:
+        activeBorderColor:
+            - "#cba6f7" # mauve
+            - bold
+        inactiveBorderColor:
+            - "#6c7086" # overlay0
+        searchingActiveBorderColor:
+            - "#f9e2af" # yellow
+            - bold
+        optionsTextColor:
+            - "#89b4fa" # blue
+        selectedLineBgColor:
+            - "#313244" # surface0
+        inactiveViewSelectedLineBgColor:
+            - "#313244" # surface0
+        cherryPickedCommitFgColor:
+            - "#89b4fa" # blue
+        cherryPickedCommitBgColor:
+            - "#313244" # surface0
+        markedBaseCommitFgColor:
+            - "#89b4fa" # blue
+        markedBaseCommitBgColor:
+            - "#f9e2af" # yellow
+        unstagedChangesColor:
+            - "#f38ba8" # red
+        defaultFgColor:
+            - "#cdd6f4" # text
+git:
+    parseEmoji: true
+    autoFetch: true
+    autoRefresh: true
+update:
+    method: never # package-managed via bootstrap/linux/packages/dev-cli.txt, not lazygit's self-updater

@@ -1,0 +1,13 @@
+[Unit]
+Description=Watch the user applications dir for regenerated Cisco Packet Tracer launcher entries
+
+[Path]
+# Packet Tracer's pt-manage.sh rewrites CiscoPacketTracer*.desktop on every
+# version bump / AppImage reinstall. Watching the directory rather than the
+# files is deliberate: a version bump changes the filenames, so a
+# PathModified= on the 9.0.1 names would miss 9.0.2 entirely.
+PathModified=%h/.local/share/applications
+Unit=packettracer-scaling.service
+
+[Install]
+WantedBy=default.target

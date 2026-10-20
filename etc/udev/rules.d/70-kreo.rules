@@ -1,0 +1,4 @@
+
+# Kreo Swarm 75 (wireless)
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3554", ATTRS{idProduct}=="fa09", MODE:="0660", GROUP="input", TAG+="uaccess", TAG+="snap_chromium_chromium", TAG+="snap_chromium_chromedriver"
+

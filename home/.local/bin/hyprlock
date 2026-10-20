@@ -1,0 +1,32 @@
+#!/bin/bash
+# Wrapper that shadows /usr/bin/hyprlock on PATH (~/.local/bin precedes
+# /usr/bin here). Waits briefly for any in-flight `matugen` run before
+# handing off, then execs the real binary so `pidof`/`pkill hyprlock`
+# and process semantics are unaffected.
+#
+# Why: Quickshell's lock handler
+# (~/.config/quickshell/ii/modules/common/panels/lock/LockScreen.qml)
+# calls `bash -c "pidof hyprlock || hyprlock"` directly -- that's the
+# real invocation path on every lock, since Quickshell is essentially
+# always running (hypridle.conf's own `pidof qs quickshell hyprlock ||
+# hyprlock` fallback only fires if Quickshell has crashed). LockScreen.qml
+# is framework-owned, so it can't be hand-edited without drifting from
+# upstream on the next dots-hyprland update; shadowing the binary here
+# is the customization surface that doesn't require touching it.
+#
+# switchwall.sh (also framework-owned,
+# ~/.config/quickshell/ii/scripts/colors/switchwall.sh) writes the new
+# wallpaper to config.json -- which Quickshell's Background.qml reads
+# live, updating the desktop instantly -- *before* it runs matugen,
+# which takes a few seconds to regenerate
+# ~/.config/hypr/hyprlock/colors.conf. Locking in that window showed the
+# new wallpaper with stale accent/background colors, since hyprlock
+# reads colors.conf fresh off disk at launch. First reported 2026-09-21.
+#
+# Fails open: never blocks the lock indefinitely if matugen hangs.
+i=0
+while pgrep -x matugen >/dev/null 2>&1 && [ "$i" -lt 30 ]; do
+    sleep 0.1
+    i=$((i + 1))
+done
+exec /usr/bin/hyprlock "$@"

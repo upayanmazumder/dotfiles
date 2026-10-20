@@ -1,0 +1,514 @@
+# Local modifications to the dots-hyprland 'ii' Quickshell config.
+# Baseline: upstream commit aed4d1ec (~/.local/share/dots-hyprland, branch main)
+# Regenerate: see docs/machine.md 'Local Quickshell modifications'
+# Apply after a dots update:  cd ~/.config/quickshell/ii && patch -p1 < .../quickshell-ii-local.patch
+
+diff --git a/modules/common/Appearance.qml b/modules/common/Appearance.qml
+index bedf01e..b5e3e9f 100644
+--- a/modules/common/Appearance.qml
++++ b/modules/common/Appearance.qml
+@@ -207,7 +207,7 @@ Singleton {
+         property int large: 23
+         property int verylarge: 30
+         property int full: 9999
+-        property int screenRounding: large
++        property int screenRounding: 22
+         property int windowRounding: 18
+     }
+ 
+diff --git a/modules/common/Config.qml b/modules/common/Config.qml
+index 5fcd1bb..9a8c323 100644
+--- a/modules/common/Config.qml
++++ b/modules/common/Config.qml
+@@ -203,6 +203,12 @@ Singleton {
+                             property string text: ""
+                         }
+                     }
++                    property JsonObject visualizer: JsonObject {
++                        property bool enable: false
++                        property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
++                        property real x: 100
++                        property real y: 900
++                    }
+                     property JsonObject weather: JsonObject {
+                         property bool enable: false
+                         property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
+@@ -257,6 +263,7 @@ Singleton {
+                     property bool showDarkModeToggle: true
+                     property bool showPerformanceProfileToggle: false
+                     property bool showScreenRecord: false
++                    property bool showAudioOutputToggle: true
+                 }
+                 property JsonObject workspaces: JsonObject {
+                     property bool monochromeIcons: true
+diff --git a/modules/common/Directories.qml b/modules/common/Directories.qml
+index 78b0a9e..ca8ef93 100644
+--- a/modules/common/Directories.qml
++++ b/modules/common/Directories.qml
+@@ -50,6 +50,8 @@ Singleton {
+     property string recordScriptPath: FileUtils.trimFileProtocol(`${Directories.scriptPath}/videos/record.sh`)
+     property string userAvatarPathAccountsService: FileUtils.trimFileProtocol(`/var/lib/AccountsService/icons/${SystemInfo.username}`)
+     property string userAvatarPathRicersAndWeirdSystems: FileUtils.trimFileProtocol(`${Directories.home}.face`)
++    property string audioOutputSwitchDir: FileUtils.trimFileProtocol(`${Directories.home}/.config/audio-output-switch`)
++    property string audioOutputRoutePath: `${Directories.audioOutputSwitchDir}/route`
+     property string userAvatarPathRicersAndWeirdSystems2: FileUtils.trimFileProtocol(`${Directories.home}.face.icon`)
+     // Cleanup on init
+     Component.onCompleted: {
+diff --git a/modules/ii/background/Background.qml b/modules/ii/background/Background.qml
+index 7841fe1..5572b70 100644
+--- a/modules/ii/background/Background.qml
++++ b/modules/ii/background/Background.qml
+@@ -17,6 +17,7 @@ import Quickshell.Hyprland
+ import qs.modules.ii.background.widgets
+ import qs.modules.ii.background.widgets.clock
+ import qs.modules.ii.background.widgets.weather
++import qs.modules.ii.background.widgets.visualizer
+ 
+ Variants {
+     id: root
+@@ -265,6 +266,17 @@ Variants {
+                     }
+                 }
+ 
++                FadeLoader {
++                    shown: Config.options.background.widgets.visualizer.enable
++                    sourceComponent: AudioVisualizerWidget {
++                        screenWidth: bgRoot.screen.width
++                        screenHeight: bgRoot.screen.height
++                        scaledScreenWidth: bgRoot.screen.width
++                        scaledScreenHeight: bgRoot.screen.height
++                        wallpaperScale: 1
++                    }
++                }
++
+                 FadeLoader {
+                     shown: Config.options.background.widgets.clock.enable
+                     sourceComponent: ClockWidget {
+diff --git a/modules/ii/background/widgets/visualizer/AudioVisualizerWidget.qml b/modules/ii/background/widgets/visualizer/AudioVisualizerWidget.qml
+new file mode 100644
+index 0000000..aa1f30f
+--- /dev/null
++++ b/modules/ii/background/widgets/visualizer/AudioVisualizerWidget.qml
+@@ -0,0 +1,65 @@
++import QtQuick
++import qs
++import qs.services
++import qs.modules.common
++import qs.modules.common.functions
++import qs.modules.common.widgets
++import qs.modules.common.widgets.widgetCanvas
++import qs.modules.ii.background.widgets
++import Quickshell.Io
++
++// Minimal, transparent, circular now-playing audio visualizer for the
++// homescreen. Built entirely from pieces already in this shell: SineCookie
++// (the same wobbly-circle primitive the cookie clock uses) driven by the
++// same cava pipeline backing the media controls and lock screen widgets.
++// No bespoke shape/canvas drawing.
++AbstractBackgroundWidget {
++    id: root
++
++    configEntryName: "visualizer"
++    visibleWhenLocked: false
++
++    implicitWidth: 180
++    implicitHeight: 180
++
++    property list<real> visualizerPoints: []
++    readonly property real audioLevel: {
++        if (root.visualizerPoints.length === 0)
++            return 0;
++        let sum = 0;
++        for (let i = 0; i < root.visualizerPoints.length; ++i)
++            sum += root.visualizerPoints[i];
++        return sum / root.visualizerPoints.length;
++    }
++    property real smoothedLevel: 0
++    onAudioLevelChanged: root.smoothedLevel = root.audioLevel
++    Behavior on smoothedLevel {
++        NumberAnimation {
++            duration: 220
++            easing.type: Easing.OutCubic
++        }
++    }
++
++    Process {
++        id: cavaProc
++        running: MprisController.isPlaying && root.visible
++        onRunningChanged: {
++            if (!cavaProc.running)
++                root.visualizerPoints = [];
++        }
++        command: ["cava", "-p", `${FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt`]
++        stdout: SplitParser {
++            onRead: data => {
++                root.visualizerPoints = data.split(";").map(p => parseFloat(p.trim())).filter(p => !isNaN(p));
++            }
++        }
++    }
++
++    SineCookie {
++        anchors.centerIn: parent
++        implicitSize: 140
++        sides: 8
++        amplitude: 3 + Math.min(1, root.smoothedLevel / 700) * 16
++        color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.35)
++    }
++}
+diff --git a/modules/ii/bar/UtilButtons.qml b/modules/ii/bar/UtilButtons.qml
+index 615ed65..18e65b6 100644
+--- a/modules/ii/bar/UtilButtons.qml
++++ b/modules/ii/bar/UtilButtons.qml
+@@ -1,6 +1,7 @@
+ import qs
+ import qs.modules.common
+ import qs.modules.common.widgets
++import qs.services
+ import QtQuick
+ import QtQuick.Layouts
+ import Quickshell
+@@ -154,5 +155,22 @@ Item {
+                 }
+             }
+         }
++
++        Loader {
++            active: Config.options.bar.utilButtons.showAudioOutputToggle && Audio.bluetoothOutputConnected
++            visible: active
++            sourceComponent: CircleUtilButton {
++                Layout.alignment: Qt.AlignVCenter
++                onClicked: Audio.toggleOutputRoute()
++                altAction: () => Audio.setOutputAuto() // Right-click: clear the manual pin, go back to BT-wins policy
++                MaterialSymbol {
++                    horizontalAlignment: Qt.AlignHCenter
++                    fill: 0
++                    text: Audio.outputRoute === "headphones" ? "headphones" : "speaker"
++                    iconSize: Appearance.font.pixelSize.large
++                    color: Appearance.colors.colOnLayer2
++                }
++            }
++        }
+     }
+ }
+diff --git a/modules/ii/lock/LockSurface.qml b/modules/ii/lock/LockSurface.qml
+index 4eb709c..de3335f 100644
+--- a/modules/ii/lock/LockSurface.qml
++++ b/modules/ii/lock/LockSurface.qml
+@@ -11,6 +11,8 @@ import qs.modules.common.panels.lock
+ import qs.modules.ii.bar as Bar
+ import Quickshell
+ import Quickshell.Services.SystemTray
++import Quickshell.Io
++import qs.modules.ii.mediaControls as MediaControls
+ 
+ MouseArea {
+     id: root
+@@ -96,6 +98,47 @@ MouseArea {
+     //     }
+     // }
+ 
++    // Now playing: media widget with playback status + cava visualizer ("beats")
++    property list<real> mediaVisualizerPoints: []
++    Process {
++        id: mediaVisualizerProc
++        running: MprisController.activePlayer !== null && MprisController.isPlaying
++        onRunningChanged: {
++            if (!mediaVisualizerProc.running)
++                root.mediaVisualizerPoints = [];
++        }
++        command: ["cava", "-p", `${FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt`]
++        stdout: SplitParser {
++            onRead: data => {
++                root.mediaVisualizerPoints = data.split(";").map(p => parseFloat(p.trim())).filter(p => !isNaN(p));
++            }
++        }
++    }
++
++    Loader {
++        id: mediaWidget
++        anchors {
++            horizontalCenter: parent.horizontalCenter
++            bottom: mainIsland.top
++            bottomMargin: 20
++        }
++        active: MprisController.activePlayer !== null
++        visible: active
++        scale: root.toolbarScale
++        opacity: root.toolbarOpacity
++        Behavior on anchors.bottomMargin {
++            animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
++        }
++
++        sourceComponent: MediaControls.PlayerControl {
++            player: MprisController.activePlayer
++            visualizerPoints: root.mediaVisualizerPoints
++            implicitWidth: Appearance.sizes.mediaControlsWidth
++            implicitHeight: Appearance.sizes.mediaControlsHeight
++            radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
++        }
++    }
++
+     // Main toolbar: password box
+     Toolbar {
+         id: mainIsland
+diff --git a/modules/ii/screenCorners/ScreenCorners.qml b/modules/ii/screenCorners/ScreenCorners.qml
+index f8b1e24..224ecb1 100644
+--- a/modules/ii/screenCorners/ScreenCorners.qml
++++ b/modules/ii/screenCorners/ScreenCorners.qml
+@@ -99,9 +99,7 @@ Scope {
+                         if (cornerWidget.isLeft)
+                             Brightness.decreaseBrightness()
+                         else {
+-                            const currentVolume = Audio.value;
+-                            const step = currentVolume < 0.1 ? 0.01 : 0.02 || 0.2;
+-                            Audio.sink.audio.volume -= step;
++                            Audio.decrementVolume();
+                         }
+                     }
+                     onScrollUp: {
+@@ -110,9 +108,7 @@ Scope {
+                         if (cornerWidget.isLeft)
+                             Brightness.increaseBrightness()
+                         else {
+-                            const currentVolume = Audio.value;
+-                            const step = currentVolume < 0.1 ? 0.01 : 0.02 || 0.2;
+-                            Audio.sink.audio.volume = Math.min(1, Audio.sink.audio.volume + step);
++                            Audio.incrementVolume();
+                         }
+                     }
+                     onMovedAway: {
+diff --git a/modules/ii/sidebarRight/QuickSliders.qml b/modules/ii/sidebarRight/QuickSliders.qml
+index 0153505..036848d 100644
+--- a/modules/ii/sidebarRight/QuickSliders.qml
++++ b/modules/ii/sidebarRight/QuickSliders.qml
+@@ -75,6 +75,7 @@ Rectangle {
+                 value: Audio.sink.audio.volume
+                 onMoved: {
+                     Audio.sink.audio.volume = value
++                    Audio.pushRealVolume(value)
+                 }
+             }
+         }
+diff --git a/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml b/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml
+index e42f735..e57b810 100644
+--- a/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml
++++ b/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml
+@@ -58,6 +58,7 @@ ColumnLayout {
+             scrollable: true
+             onMoved: {
+                 Audio.sink.audio.volume = value;
++                Audio.pushRealVolume(value);
+             }
+         }
+ 
+diff --git a/services/Audio.qml b/services/Audio.qml
+index 68ebc3a..adae095 100644
+--- a/services/Audio.qml
++++ b/services/Audio.qml
+@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
+ import qs.modules.common
+ import QtQuick
+ import Quickshell
++import Quickshell.Io
+ import Quickshell.Services.Pipewire
+ 
+ /**
+@@ -18,6 +19,40 @@ Singleton {
+     readonly property real hardMaxValue: 2.00 // People keep joking about setting volume to 5172% so...
+     property string audioTheme: Config.options.sounds.theme
+     property real value: sink?.audio.volume ?? 0
++
++    // Real hardware output routing (speaker vs connected Bluetooth
++    // headset), independent of the PipeWire default sink above, which
++    // stays pinned to easyeffects_sink -- see audio-output-switch.sh and
++    // lib/audio-output-routing.sh for why a separate mechanism is needed.
++    property string outputRoute: "speaker" // "speaker" | "headphones", mirrors ~/.config/audio-output-switch/route
++    readonly property bool bluetoothOutputConnected: root.outputDevices.some(node => (node.name ?? "").startsWith("bluez_output."))
++
++    function switchOutputToSpeaker() {
++        Quickshell.execDetached(["bash", "-c", "$HOME/.local/bin/audio-output-switch.sh speaker"]);
++    }
++
++    function switchOutputToHeadphones() {
++        Quickshell.execDetached(["bash", "-c", "$HOME/.local/bin/audio-output-switch.sh headphones"]);
++    }
++
++    function toggleOutputRoute() {
++        Quickshell.execDetached(["bash", "-c", "$HOME/.local/bin/audio-output-switch.sh toggle"]);
++    }
++
++    function setOutputAuto() {
++        Quickshell.execDetached(["bash", "-c", "$HOME/.local/bin/audio-output-switch.sh auto"]);
++    }
++
++    FileView {
++        id: outputRouteFileView
++        path: Qt.resolvedUrl(Directories.audioOutputRoutePath)
++        watchChanges: true
++        onFileChanged: reload()
++        onLoaded: {
++            const t = outputRouteFileView.text().trim();
++            if (t === "speaker" || t === "headphones") root.outputRoute = t;
++        }
++    }
+     
+     function friendlyDeviceName(node) {
+         return (node.nickname || node.description || Translation.tr("Unknown"));
+@@ -49,8 +84,33 @@ Singleton {
+     signal sinkProtectionTriggered(string reason);
+ 
+     // Controls
++    //
++    // NOTE: easyeffects_sink's own PipeWire volume/mute is COSMETIC.
++    // EasyEffects reads audio for its DSP chain from easyeffects_sink's
++    // *monitor* port, which is pre-fader by PipeWire convention, so
++    // changing this virtual sink's volume never reaches the real
++    // speakers/headphones. pushRealVolume/pushRealMute mirror the change
++    // to whichever real hardware sink is actually active (see
++    // ~/.local/bin/ee-volume.sh and ~/.config/wireplumber/
++    // wireplumber.conf.d/51-bluetooth-audio-priority.conf).
++    function pushRealVolume(vol) {
++        Quickshell.execDetached(["bash", "-c", "$HOME/.local/bin/ee-volume.sh set " + Math.round(vol * 100) + "%"]);
++    }
++
++    function pushRealMute(muted) {
++        Quickshell.execDetached(["bash", "-c", "$HOME/.local/bin/ee-volume.sh mute-set " + (muted ? 1 : 0)]);
++    }
++
++    // toggleMute/incrementVolume/decrementVolume deliberately do NOT
++    // touch Audio.sink.audio.* directly. ee-volume.sh computes the new
++    // value from the REAL sink's current value and writes the identical
++    // result to both sinks (see its "SINGLE SOURCE OF TRUTH" comment) --
++    // the slider/OSD update reactively once PipeWire reports the new
++    // easyeffects_sink volume. Computing/writing the cosmetic value here
++    // too would let it step independently of the real sink again and
++    // silently drift out of sync (this happened once already).
+     function toggleMute() {
+-        Audio.sink.audio.muted = !Audio.sink.audio.muted
++        Quickshell.execDetached(["bash", "-c", "$HOME/.local/bin/ee-volume.sh mute-toggle"]);
+     }
+ 
+     function toggleMicMute() {
+@@ -58,15 +118,11 @@ Singleton {
+     }
+ 
+     function incrementVolume() {
+-        const currentVolume = Audio.value;
+-        const step = currentVolume < 0.1 ? 0.01 : 0.02 || 0.2;
+-        Audio.sink.audio.volume = Math.min(1, Audio.sink.audio.volume + step);
++        Quickshell.execDetached(["bash", "-c", "$HOME/.local/bin/ee-volume.sh up 2%"]);
+     }
+-    
++
+     function decrementVolume() {
+-        const currentVolume = Audio.value;
+-        const step = currentVolume < 0.1 ? 0.01 : 0.02 || 0.2;
+-        Audio.sink.audio.volume -= step;
++        Quickshell.execDetached(["bash", "-c", "$HOME/.local/bin/ee-volume.sh down 2%"]);
+     }
+ 
+     function setDefaultSink(node) {
+diff --git a/services/MprisController.qml b/services/MprisController.qml
+index 7faed22..0ce855f 100644
+--- a/services/MprisController.qml
++++ b/services/MprisController.qml
+@@ -38,7 +38,13 @@ Singleton {
+             // playerctld just copies other buses and we don't need duplicates
+             !player.dbusName?.startsWith('org.mpris.MediaPlayer2.playerctld') &&
+             // Non-instance mpd bus
+-            !(player.dbusName?.endsWith('.mpd') && !player.dbusName.endsWith('MediaPlayer2.mpd')));
++            !(player.dbusName?.endsWith('.mpd') && !player.dbusName.endsWith('MediaPlayer2.mpd')) &&
++            // KDE Connect mirrors the connected phone's media session as a
++            // phantom MPRIS player -- it's not something actually playing
++            // through this machine's audio output, and if it registers
++            // before a real local player it can silently steal
++            // play/pause/next focus. Always exclude it.
++            !player.dbusName?.startsWith('org.mpris.MediaPlayer2.kdeconnect'));
+     }
+ 
+ 	// Original stuff from fox below
+diff --git a/modules/common/models/quickToggles/HotspotToggle.qml b/modules/common/models/quickToggles/HotspotToggle.qml
+--- /dev/null
++++ b/modules/common/models/quickToggles/HotspotToggle.qml
+@@ -0,0 +1,49 @@
++import QtQuick
++import Quickshell
++import Quickshell.Io
++import qs.services
++import qs.modules.common
++import qs.modules.common.functions
++
++QuickToggleModel {
++    id: root
++    readonly property string script: FileUtils.trimFileProtocol(Directories.home) + "/Scripts/bin/hotspot"
++
++    name: Translation.tr("Hotspot")
++    icon: "wifi_tethering"
++    tooltipText: Translation.tr("Sonder hotspot")
++    available: !actionProcess.running
++    mainAction: () => {
++        if (!actionProcess.running)
++            actionProcess.exec([root.script, root.toggled ? "stop" : "--daemon"])
++    }
++
++    function refresh() {
++        if (!statusProcess.running && !actionProcess.running)
++            statusProcess.running = true
++    }
++
++    Component.onCompleted: refresh()
++
++    Timer {
++        interval: 5000
++        running: true
++        repeat: true
++        onTriggered: root.refresh()
++    }
++
++    Process {
++        id: statusProcess
++        command: [root.script, "status"]
++        onExited: (exitCode, exitStatus) => root.toggled = exitCode === 0
++    }
++
++    Process {
++        id: actionProcess
++        onExited: (exitCode, exitStatus) => {
++            root.refresh()
++            if (exitCode !== 0)
++                Quickshell.execDetached(["notify-send", Translation.tr("Hotspot"), Translation.tr("Could not change hotspot. Check authentication and create_ap.")])
++        }
++    }
++}
+diff --git a/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml b/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
+--- a/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
++++ b/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
+@@ -32 +32 @@
+-    readonly property list<string> availableToggleTypes: ["network", "bluetooth", "idleInhibitor", "easyEffects", "nightLight", "darkMode", "cloudflareWarp", "gameMode", "screenSnip", "colorPicker", "onScreenKeyboard", "mic", "audio", "notifications", "powerProfile","musicRecognition", "antiFlashbang"]
++    readonly property list<string> availableToggleTypes: ["network", "bluetooth", "idleInhibitor", "easyEffects", "nightLight", "darkMode", "cloudflareWarp", "hotspot", "gameMode", "screenSnip", "colorPicker", "onScreenKeyboard", "mic", "audio", "notifications", "powerProfile","musicRecognition", "antiFlashbang"]
+diff --git a/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidHotspotToggle.qml b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidHotspotToggle.qml
+--- /dev/null
++++ b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidHotspotToggle.qml
+@@ -0,0 +1,5 @@
++import qs.modules.common.models.quickToggles
++
++AndroidQuickToggleButton {
++    toggleModel: HotspotToggle {}
++}
+diff --git a/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml
+--- a/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml
++++ b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml
+@@ -150,0 +151,13 @@
++    DelegateChoice { roleValue: "hotspot"; AndroidHotspotToggle {
++        required property int index
++        required property var modelData
++        buttonIndex: root.startingIndex + index
++        buttonData: modelData
++        editMode: root.editMode
++        expandedSize: modelData.size > 1
++        baseCellWidth: root.baseCellWidth
++        baseCellHeight: root.baseCellHeight
++        cellSpacing: root.spacing
++        cellSize: modelData.size
++    } }
+

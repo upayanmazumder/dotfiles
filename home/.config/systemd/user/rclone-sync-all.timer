@@ -1,0 +1,10 @@
+[Unit]
+Description=Poll Google Drive for remote-side changes and new top-level folders
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=2min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

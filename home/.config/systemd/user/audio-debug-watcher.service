@@ -1,0 +1,13 @@
+[Unit]
+Description=Audio debug watcher - logs audio graph and bluetooth events for diagnosing pauses/breakage
+After=pipewire.service wireplumber.service pipewire-pulse.service
+Wants=pipewire.service wireplumber.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/audio-debug-watcher.sh
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

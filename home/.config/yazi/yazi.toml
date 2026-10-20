@@ -1,0 +1,29 @@
+[manager]
+show_hidden = false
+sort_by = "alphabetical"
+sort_dir_first = true
+linemode = "size"
+
+[preview]
+tab_size = 2
+max_width = 800
+max_height = 600
+cache_dir = ""
+
+[opener]
+open = [
+	{ run = 'xdg-open "$1"', orphan = true, desc = "Open with xdg-open" },
+]
+edit = [
+	{ run = 'nvim "$@"', block = true, desc = "Edit with Neovim" },
+]
+
+[open]
+rules = [
+	{ mime = "image/*", use = [ "open", "reveal" ] },
+	{ mime = "video/*", use = [ "open", "reveal" ] },
+	{ mime = "application/pdf", use = [ "open", "reveal" ] },
+	{ mime = "application/zip", use = [ "extract", "reveal" ] },
+	{ mime = "application/gzip", use = [ "extract", "reveal" ] },
+	{ mime = "application/x-tar", use = [ "extract", "reveal" ] },
+]

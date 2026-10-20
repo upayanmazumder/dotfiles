@@ -1,0 +1,15 @@
+.apply-backups/
+# Machine-local credentials and identity must never be added to this checkout.
+home/.ssh/
+home/.config/git/allowed_signers
+home/.config/hotspot/
+home/.config/rclone/
+home/.local/share/keyrings/
+home/.config/kdeconnect/
+home/.config/Code/User/globalStorage/
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/id_ed25519*
+**/id_rsa*

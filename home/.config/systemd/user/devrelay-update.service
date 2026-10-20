@@ -1,0 +1,6 @@
+[Unit]
+Description=DevRelay gateway and skill refresh
+
+[Service]
+Type=oneshot
+ExecStart=/home/upayan/.devrelay/bin/devrelay-update

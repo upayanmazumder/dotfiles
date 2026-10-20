@@ -1,0 +1,136 @@
+// Zed settings -- tracked in this checkout (home/.config/zed/settings.json).
+//
+// Ported from the VS Code setup this machine ran until 2026-09-16:
+//   editor.formatOnSave: true        -> format_on_save: "on"
+//   files.autoSave: "onFocusChange"  -> autosave: "on_focus_change"
+//   editor.wordWrap: "on"            -> soft_wrap: "editor_width"
+//   terminal font JetBrainsMono NF   -> buffer/terminal font below
+//   archety.material-icons           -> material-icon-theme extension
+//
+// Theme note: two glass themes are installed as plain files in
+// ~/.config/zed/themes/ -- Zed loads any theme JSON dropped there, no
+// extension needed (auto_install_extensions would not pick this one up).
+//
+//   "One Dark Pro Glass"  <- active. Vendored from
+//                            github.com/bukitoka/one-dark-pro-max (MIT).
+//                            Fully transparent editor pane (alpha 00).
+//   "Matugen Glass"       <- GENERATED from
+//                            ~/.config/matugen/templates/zed/matugen-glass.json
+//                            via [templates.zed] in matugen's config.toml, so
+//                            it retints on every wallpaper change alongside
+//                            hyprland/hyprlock/fuzzel/gtk. Swap back by
+//                            setting "theme" below to it.
+//
+// Both declare their own transparency ("background.appearance": "blurred") --
+// there is no window_background_appearance setting in Zed 1.19. The frosting
+// comes from Hyprland, which needs the dev.zed.Zed no_blur=false rule in
+// ~/.config/hypr/custom/rules.lua (the framework disables blur on all windows).
+{
+  "project_panel": {
+    "dock": "left"
+  },
+  "git_panel": {
+    "dock": "right"
+  },
+  "cli_default_open_behavior": "existing_window",
+  "theme": "One Dark Pro Glass",
+  "icon_theme": "Material Icon Theme",
+  "base_keymap": "VSCode",
+
+  // Zed's llama.cpp provider defaults to probing http://localhost:8080 and
+  // logs `Failed to authenticate provider: llama.cpp: ... 404 Not Found` on
+  // every launch. Nothing is wrong with Zed: port 8080 on this machine is a
+  // published Docker container port (docker-proxy), which answers the probe
+  // with {"message":"Not Found"}. No llama.cpp server runs here, so turn
+  // discovery off rather than let it interrogate a random container.
+  // Note the settings key is "llama.cpp" WITH the dot, not llama_cpp.
+  "language_models": {
+    "llama.cpp": {
+      "auto_discover": false,
+      "available_models": []
+    }
+  },
+
+  "ui_font_size": 16,
+  "buffer_font_size": 15,
+  "buffer_font_family": "JetBrainsMono Nerd Font Mono",
+  "buffer_font_features": {
+    "calt": true
+  },
+
+  "autosave": "on_focus_change",
+  "format_on_save": "on",
+  "soft_wrap": "editor_width",
+  "session": {
+    "trust_all_worktrees": true
+  },
+
+  "terminal": {
+    // Zed's Python venv auto-detection does not "activate" anything itself --
+    // it writes the activation command into the terminal's PTY and then writes a
+    // follow-up `clear` the same way. Those two writes race, and when the second
+    // wins the terminal receives one run-on line:
+    //   source <repo>/.venv/bin/activate.fishclear
+    //   source: No such file or directory
+    // on every new terminal in any Python repo (zed-industries/zed#47345, open
+    // as of Zed 1.21.0 -- `activate_script` does not avoid it, the race is in the
+    // injector). Nothing on this machine wants shell activation: the Makefile
+    // calls .venv/bin/python / .venv/bin/uvicorn by absolute path. Turn the writer
+    // off rather than race it. Re-enable with {"on": {"directories": [".venv", "venv"], "activate_script": "fish"}}
+    // only once upstream flushes the command before the clear.
+    "detect_venv": "off",
+    "font_family": "JetBrainsMono Nerd Font Mono",
+    "font_size": 14,
+    "copy_on_select": true,
+    "blinking": "off"
+  },
+
+  // Zed bundles prettier, so the JS/TS/JSON/CSS/HTML/YAML/Markdown formatting
+  // that esbenp.prettier-vscode used to do works with no extra install.
+  //
+  // Python needs an explicit external formatter: pyright does not format, so
+  // format_on_save alone is a no-op. `black -q -` reads stdin and writes
+  // stdout, which is exactly the contract Zed's external formatter expects.
+  // This restores parity with the old ms-python.black-formatter setup.
+  // Requires python-black (in packages/pacman.txt).
+  "languages": {
+    "Python": {
+      "format_on_save": "on",
+      "formatter": {
+        "external": {
+          "command": "black",
+          "arguments": ["-q", "-"]
+        }
+      }
+    }
+  },
+
+  // Zed ships Rust/TS/JS/TSX/Python/Go/C/C++/JSON/YAML/Markdown/Bash built in.
+  // These cover the rest of what the VS Code extension set handled. QML is here
+  // because the Quickshell/illogical-impulse desktop work is ~595 .qml files,
+  // and lua because ~/.config/hypr/custom/*.lua is hand-maintained.
+  "auto_install_extensions": {
+    "qml": true,
+    "lua": true,
+    "fish": true,
+    "java": true,
+    "csharp": true,
+    "dockerfile": true,
+    "toml": true,
+    "html": true,
+    "sql": true,
+    "env": true,
+    "make": true,
+    "powershell": true,
+    "material-icon-theme": true,
+
+    // WakaTime heartbeats. The extension (id `wakatime`, from
+    // github.com/wakatime/zed-wakatime) registers a language server on every
+    // language it knows, then shells out to `wakatime-cli`. Zed's worktree env
+    // has no ~/.wakatime on PATH, so the extension downloads its own
+    // wakatime-cli + wakatime-ls into ~/.local/share/zed/extensions/work on
+    // first use -- the ~/.wakatime/wakatime-cli install is only used by other
+    // editors. API key lives in ~/.wakatime.cfg (untracked, not in this repo).
+    "wakatime": true
+  }
+}

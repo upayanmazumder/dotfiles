@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Dolphin
+GenericName=File Manager
+Exec=env QT_QPA_PLATFORMTHEME=gtk3 GTK_THEME=Adwaita:dark QT_STYLE_OVERRIDE=kvantum dolphin %u
+Icon=org.kde.dolphin
+Type=Application
+Categories=Qt;KDE;System;FileTools;FileManager;
+MimeType=inode/directory;
+StartupWMClass=dolphin
+X-KDE-Shortcuts=Meta+E

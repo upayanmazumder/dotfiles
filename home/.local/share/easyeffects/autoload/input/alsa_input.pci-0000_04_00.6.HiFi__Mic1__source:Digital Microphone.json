@@ -1,0 +1,6 @@
+{
+    "device": "alsa_input.pci-0000_04_00.6.HiFi__Mic1__source",
+    "device-description": "Ryzen HD Audio Controller Digital Microphone",
+    "device-profile": "Digital Microphone",
+    "preset-name": "Mic-Clean"
+}

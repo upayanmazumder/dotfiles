@@ -1,0 +1,22 @@
+[Unit]
+Description=Keep EasyEffects' hardware output on the intended route (speaker/headphones)
+After=pipewire-pulse.service bluetooth.target
+Wants=pipewire-pulse.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/easyeffects-bt-relink.sh
+Restart=always
+RestartSec=2
+# This daemon intentionally spawns EasyEffects as an independent,
+# long-lived detached process (setsid + disown, see restart_easyeffects
+# in the script). Default KillMode=control-group kills EVERYTHING in
+# this service's cgroup on stop/restart -- including that detached
+# EasyEffects, silently taking down all audio DSP/output. Learned this
+# the hard way: `systemctl --user stop` on this service killed
+# EasyEffects too. KillMode=process limits the kill to the tracked main
+# PID (this script), leaving EasyEffects alone.
+KillMode=process
+
+[Install]
+WantedBy=default.target

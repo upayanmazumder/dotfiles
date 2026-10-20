@@ -1,0 +1,32 @@
+[Unit]
+# Set the power-profiles-daemon profile from AC/battery state.
+#
+# power-profiles-daemon does NOT do this on its own -- it exposes profiles and
+# holds whichever one was last set, forever. Before this unit existed, sonder
+# sat pinned to `performance` (governor performance, EPP performance) on a 15W
+# Ryzen 7 7840U with a 59.3 Wh battery, on AC and on battery alike.
+#
+# Triggered two ways: at boot (WantedBy below) and on every power_supply change
+# event via etc/udev/rules.d/99-power-profile.rules.
+#
+# Note this machine's platform_profile is partly broken in firmware -- reading
+# /sys/firmware/acpi/platform_profile returns EINVAL and the kernel logs
+# "platform_profile: Failed to get profile for handler hp-wmi". Setting still
+# works (PPD also drives amd_pstate), which is why this uses powerprofilesctl
+# rather than poking the sysfs attribute directly. See docs/machine.md
+# "GPU / power / thermals".
+Description=Set power profile from AC/battery state
+Documentation=man:powerprofilesctl(1)
+After=power-profiles-daemon.service
+Wants=power-profiles-daemon.service
+
+[Service]
+Type=oneshot
+# ADP1 is this laptop's mains adapter (BAT0 is the battery, and the
+# ucsi-source-psy USB-C node is not the charger). Profile on battery is
+# `balanced`, not `power-saver` -- power-saver caps clocks hard enough to be
+# noticeable while typing; change the second value below if you want it.
+ExecStart=/bin/sh -c 'if [ "$(cat /sys/class/power_supply/ADP1/online 2>/dev/null)" = "1" ]; then p=performance; else p=balanced; fi; exec /usr/bin/powerprofilesctl set "$p"'
+
+[Install]
+WantedBy=multi-user.target

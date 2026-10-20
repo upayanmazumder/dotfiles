@@ -1,0 +1,12 @@
+[Unit]
+Description=Re-apply QT_SCALE_FACTOR to Cisco Packet Tracer launcher entries after the AppImage regenerates them
+# The .path unit fires on any change in ~/.local/share/applications, which
+# other package installs also touch. The script is a cheap no-op in that
+# case, but bursts of triggers must not trip the default start rate limit
+# and wedge the unit. (StartLimitIntervalSec belongs in [Unit], not
+# [Service] -- systemd only tolerates the latter for legacy compat.)
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/packettracer-fix-scaling.sh

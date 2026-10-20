@@ -1,0 +1,33 @@
+# AUR packages for Sonder, installed via `paru -S --needed` (paru itself is
+# in pacman.txt). Does NOT include dots-hyprland's illogical-impulse-*
+# packages -- those are local PKGBUILDs the upstream dots-hyprland ./setup
+# installer builds itself; not managed here.
+#
+# `packettracer` is not self-contained: its PKGBUILD source is
+# `local://CiscoPacketTracer_901_Ubuntu_64bit.deb`, which Cisco gates behind a
+# NetAcad login. On a fresh machine `apply.sh` WILL fail on it -- download the
+# .deb from https://www.netacad.com/resources/lab-downloads, drop it in the
+# paru/makepkg build dir, then build. Already-installed systems are unaffected
+# (`--needed` short-circuits).
+adw-gtk-theme-git
+breeze-plus
+darkly-bin
+figma-linux-bin
+google-chrome
+html2markdown
+kind-bin
+linux-wifi-hotspot
+libsoup
+oh-my-posh-bin
+otf-space-grotesk
+packettracer
+python-clickgen
+qt6-avif-image-plugin
+redhat-fonts
+spotify
+ttf-material-symbols-variable-git
+ttf-readex-pro
+ttf-rubik-vf
+ttf-twemoji
+visual-studio-code-bin
+zapzap
