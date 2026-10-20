@@ -1,0 +1,34 @@
+[io/elementary/files/icon-view]
+zoom-level='large'
+
+[io/elementary/files/preferences]
+default-viewmode='icon'
+sidebar-width=214
+
+[org/gnome/Solanum]
+fullscreen-break=false
+lap-length=uint32 25
+long-break-length=uint32 15
+sessions-until-long-break=uint32 4
+short-break-length=uint32 5
+
+[org/gnome/desktop/interface]
+color-scheme='prefer-dark'
+cursor-size=24
+cursor-theme='Bibata-Modern-Classic'
+font-name='Google Sans Flex Medium 11 @opsz=11,wght=500'
+gtk-theme='adw-gtk3-dark'
+scaling-factor=uint32 2
+text-scaling-factor=1.25
+
+[org/gtk/settings/file-chooser]
+date-format='regular'
+location-mode='path-bar'
+show-hidden=false
+show-size-column=true
+show-type-column=true
+sidebar-width=207
+sort-column='name'
+sort-directories-first=false
+sort-order='ascending'
+type-format='category'

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=SKLauncher
+Comment=Secure and modern Minecraft Launcher
+Exec=/home/upayan/.local/bin/sklauncher
+Icon=sklauncher
+Terminal=false
+Categories=Game;Simulation;
+Keywords=minecraft;launcher;

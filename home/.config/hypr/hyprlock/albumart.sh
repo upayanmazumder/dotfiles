@@ -3,12 +3,11 @@
 cache="${XDG_CACHE_HOME:-$HOME/.cache}/hyprlock"
 mkdir -p "$cache"
 art="$cache/art.png"
-blank="$cache/blank.png"
+blank="$HOME/.config/hypr/hyprlock/blank.png"
 source_image="$cache/art.source"
 next_art="$cache/art.next.png"
 last_url="$cache/art.url"
 
-[[ -f "$blank" ]] || magick -size 128x128 xc:none "$blank" 2>/dev/null
 command -v playerctl >/dev/null || { echo "$blank"; exit 0; }
 player=()
 if playerctl --player=spotify status >/dev/null 2>&1; then

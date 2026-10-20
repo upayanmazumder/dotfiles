@@ -82,20 +82,27 @@ replace_home() {
 }
 
 apply_etc() {
-  # Install tracked /etc files only when absent; never replace live changes.
-  log "copying new etc/ files into /etc (changed files are skipped)"
-  find "$SCRIPT_DIR/etc" -type f | while IFS= read -r src; do
-    rel="etc/${src#"$SCRIPT_DIR"/etc/}"
-    dest="/$rel"
-    if sudo test -e "$dest" || sudo test -L "$dest"; then
-      if sudo cmp -s "$src" "$dest"; then
+  # Install tracked etc/ and usr/ files only when absent; never replace
+  # live changes. Files with the executable bit in git install as 755.
+  log "copying new etc/ and usr/ files into the system (changed files are skipped)"
+  local tree src rel dest mode
+  for tree in etc usr; do
+    [ -d "$SCRIPT_DIR/$tree" ] || continue
+    while IFS= read -r src; do
+      rel="${src#"$SCRIPT_DIR"/}"
+      dest="/$rel"
+      if sudo test -e "$dest" || sudo test -L "$dest"; then
+        if sudo cmp -s "$src" "$dest"; then
+          continue
+        fi
+        log "  skipped changed $rel (review and merge manually)"
         continue
       fi
-      log "  skipped changed $rel (review and merge manually)"
-      continue
-    fi
-    sudo install -Dm 644 -o root -g root "$src" "$dest"
-    log "  $rel"
+      mode=644
+      [ -x "$src" ] && mode=755
+      sudo install -Dm "$mode" -o root -g root "$src" "$dest"
+      log "  $rel"
+    done < <(find "$SCRIPT_DIR/$tree" -type f)
   done
 }
 

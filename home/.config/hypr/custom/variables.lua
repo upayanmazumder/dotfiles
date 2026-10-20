@@ -31,7 +31,12 @@ officeSoftware = "libreoffice"
 taskManager    = "kitty -1 fish -c btop"
 fileManager    = "gio launch $HOME/.local/share/applications/org.kde.dolphin.desktop"
 
-browser = "/usr/bin/thorium-browser-avx2" -- wrapper reads thorium-flags.conf.
+browser = "/usr/bin/thorium-browser-avx2" -- 2026-10-07: was pointing at the raw
+                              -- /opt/.../thorium binary, which bypasses the
+                              -- wrapper script and so ignores
+                              -- ~/.config/thorium/thorium-flags.conf (e.g.
+                              -- --enable-features=TouchpadOverscrollHistoryNavigation
+                              -- for 2-finger swipe navigation never applied).
 -- Dolphin uses the same desktop entry for SUPER+E and Quickshell.
 -- The entry selects its dark Qt palette and Kvantum theme.
 -- The other upstream chains keep their first installed candidate.

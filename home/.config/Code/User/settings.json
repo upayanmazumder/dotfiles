@@ -1,0 +1,95 @@
+{
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true,
+  "terminal.integrated.enableMultiLinePasteWarning": "never",
+  "terminal.integrated.fontFamily": "'JetBrainsMono Nerd Font Mono', 'JetBrains Mono Nerd Font', monospace",
+  "vscode_custom_css.imports": [
+    "file:///c:/Users/upaya/.vscode/extensions/brandonkirbyson.vscode-animations-2.0.7/dist/updateHandler.js",
+  ],
+  "explorer.confirmDelete": false,
+  "explorer.confirmPasteNative": false,
+  "explorer.confirmDragAndDrop": false,
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "powershell.promptToUpdatePowerShell": false,
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "diffEditor.ignoreTrimWhitespace": false,
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "[c]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+  },
+  "workbench.editor.empty.hint": "hidden",
+  "vscode-pets.petSize": "medium",
+  "vscode-pets.theme": "forest",
+  "vscode-pets.throwBallWithMouse": true,
+  "vscode-pets.petType": "deno",
+  "workbench.editorAssociations": {
+    "*.copilotmd": "vscode.markdown.preview.editor",
+    "*.docx": "default",
+  },
+  "[github-actions-workflow]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "claudeCode.preferredLocation": "sidebar",
+  "githubPullRequests.pullBranch": "never",
+  "yaml.disableSchemaDetection": [
+    "**/.github/workflows/*.yml",
+    "**/.github/workflows/*.yaml",
+    "**/.gitea/workflows/*.yml",
+    "**/.gitea/workflows/*.yaml",
+    "**/.forgejo/workflows/*.yml",
+    "**/.forgejo/workflows/*.yaml",
+  ],
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "[powershell]": {
+    "editor.defaultFormatter": "tooark.ark-format-powershell",
+  },
+  "vscode-pets.petColor": "akita",
+  "editor.formatOnSave": true,
+  "files.autoSave": "onFocusChange",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.wordWrap": "on",
+  "security.workspace.trust.untrustedFiles": "open",
+  "files.associations": {
+    ".env*": "dotenv"
+  },
+  "editor.tokenColorCustomizations": {
+    "textMateRules": []
+  },
+  "githubPullRequests.pushBranch": "always",
+  "redhat.telemetry.enabled": true,
+  "material-code.primaryColor": "#32353C",
+  "dotenv.enableAutocloaking": false,
+  "vs-kubernetes": {
+    "vs-kubernetes.crd-code-completion": "enabled",
+  },
+  "jdk.telemetry.enabled": false,
+  "makefile.configureOnOpen": true,
+  "workbench.colorTheme": "Night Owl",
+}

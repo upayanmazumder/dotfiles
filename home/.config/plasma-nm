@@ -1,0 +1,6 @@
+# Plasma NM hotspot password omitted (private); set it in Plasma network settings.
+[General]
+HotspotName=sonder
+ManageVirtualConnections=false
+SystemConnectionsByDefault=true
+UnlockModemOnDetection=true

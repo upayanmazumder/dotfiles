@@ -1,0 +1,15 @@
+# ~/.config/mise/config.toml
+# Language runtimes managed by mise (replaces asdf/nvm/gvm/pyenv/etc.)
+# Run `mise install` after editing.
+
+[tools]
+node = "latest"
+go = "latest"
+python = "latest"
+rust = "latest"      # cargo, rustc, clippy, rustfmt
+
+[settings]
+experimental = true   # enables mise's native tool management
+activate_aggressive = false
+status.show_tools = true
+status.missing_tools = "if_other_versions_installed"

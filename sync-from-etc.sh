@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Preview changed tracked /etc files without copying by default. Import one
-# reviewed file with ./sync-from-etc.sh --pull default/grub. Secret-bearing
-# paths and content must never be brought into this repo.
+# Preview changed tracked system files (etc/ and usr/) without copying by
+# default. Import one reviewed file with ./sync-from-etc.sh --pull default/grub
+# or --pull usr/share/.... Secret-bearing paths and content never enter this repo.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mode="${1:-}"
@@ -61,10 +61,10 @@ while IFS= read -r -d '' rel; do
   fi
   cp "$live" "$tracked"
   printf '\033[1;32mpulled\033[0m %s\n' "$rel"
-done < <(git ls-files -z -- etc/)
+done < <(git ls-files -z -- etc/ usr/)
 if [ "$mode" = "--pull" ] && [ "$seen" -eq 0 ]; then
-  printf 'not tracked under etc/: %s\n' "$selected" >&2
+  printf 'not tracked under etc/ or usr/: %s\n' "$selected" >&2
   exit 2
 fi
 
-git status --short -- etc/
+git status --short -- etc/ usr/

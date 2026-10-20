@@ -1,4 +1,6 @@
-# Yazi wrapper: change to its last directory on exit.
+# ~/.config/fish/functions/y.fish
+# Yazi wrapper: cd to the last directory on exit.
+# `yy` also changes directory; plain `yazi` stays in the current dir.
 function y
     set tmp (mktemp -t yazi-cwd.XXXXXX)
     yazi --cwd-file="$tmp" $argv

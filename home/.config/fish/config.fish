@@ -88,3 +88,9 @@ fish_add_path /home/upayan/.opencode/bin
 
 # npm global (user-prefix, e.g. paseo CLI)
 fish_add_path ~/.npm-global/bin
+
+# Added by the 797th company CLI installer
+fish_add_path /home/upayan/.797th/cli/bin
+
+# Ollama on Raspberry Pi (syn)
+set -gx OLLAMA_HOST "http://syn:11434"

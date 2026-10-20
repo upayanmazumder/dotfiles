@@ -1,23 +1,4 @@
 {
-  "enabledPlugins": {
-    "ui-ux-pro-max@ui-ux-pro-max-skill": true,
-    "runpod@runpod": true
-  },
-  "extraKnownMarketplaces": {
-    "ui-ux-pro-max-skill": {
-      "source": {
-        "source": "github",
-        "repo": "nextlevelbuilder/ui-ux-pro-max-skill"
-      }
-    },
-    "runpod": {
-      "source": {
-        "source": "github",
-        "repo": "runpod/runpod-plugins-official"
-      }
-    }
-  },
-  "theme": "dark",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -79,5 +60,25 @@
         ]
       }
     ]
-  }
+  },
+  "enabledPlugins": {
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true,
+    "runpod@runpod": true,
+    "frontend-design@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "ui-ux-pro-max-skill": {
+      "source": {
+        "source": "github",
+        "repo": "nextlevelbuilder/ui-ux-pro-max-skill"
+      }
+    },
+    "runpod": {
+      "source": {
+        "source": "github",
+        "repo": "runpod/runpod-plugins-official"
+      }
+    }
+  },
+  "theme": "dark"
 }

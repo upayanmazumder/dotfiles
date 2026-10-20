@@ -1,0 +1,9 @@
+[Unit]
+Description=Send PC health and Zed activity to upayan.dev every 10 seconds
+[Timer]
+OnBootSec=10s
+OnUnitActiveSec=10s
+AccuracySec=1s
+Unit=upayan-pc.service
+[Install]
+WantedBy=timers.target

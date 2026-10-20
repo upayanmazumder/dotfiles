@@ -1,0 +1,9 @@
+### Only customized options are tracked; VLC fills in the rest on first run.
+
+[qt] # Qt interface
+qt-dark-palette=1
+qt-slider-colours=46;32;58;96;60;130;150;95;185;200;140;230
+qt-privacy-ask=0
+
+[core] # core program
+metadata-network-access=1

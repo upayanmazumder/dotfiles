@@ -1,0 +1,6 @@
+[Unit]
+Description=Send PC health and Zed activity to upayan.dev
+[Service]
+Type=oneshot
+EnvironmentFile=%h/.config/upayan-pc.env
+ExecStart=%h/.local/bin/pc-report-client
