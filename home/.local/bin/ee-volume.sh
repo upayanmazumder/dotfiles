@@ -18,11 +18,16 @@
 # built-in speaker -- matching the priority in
 # 51-bluetooth-audio-priority.conf) and adjusts that sink directly.
 #
-# HARD CAP AT 100%
-# ----------------
-# The active presets do not reserve enough headroom for post-effect gain.
-# Values above 100% amplify the real sink after the EasyEffects limiter.
-# Limit volume keys and slider changes to unity gain to prevent clipping.
+# CAP: 153% ON THE SPEAKER, 100% ELSEWHERE
+# ----------------------------------------
+# 153% is PulseAudio's UI maximum and the limit pavucontrol offers. It is
+# +11.08 dB of real gain (PipeWire volume is cubic), applied to the real
+# sink AFTER the EasyEffects limiter. Only the Speakers-* presets reserve
+# that headroom: their limiter has gain-boost off and a -12 dBFS ceiling,
+# so a full-scale peak lands at about -0.9 dBFS at 153%. The Bluetooth and
+# DAC presets keep a 0 dBFS ceiling, so any other sink stays at 100%.
+# If you raise MAX_SPEAKER_PCT or lower the ceiling margin, change the
+# limiter threshold in both Speakers-* presets by the same amount.
 #
 # SINGLE SOURCE OF TRUTH
 # -----------------------
@@ -55,10 +60,17 @@ current_pct() {
   pactl get-sink-volume "$1" 2>/dev/null | grep -oP '\d+(?=%)' | head -1
 }
 
+MAX_SPEAKER_PCT=153
+
+max_pct() {
+  if [[ "$sink" == "$SPEAKER_SINK" ]]; then echo "$MAX_SPEAKER_PCT"; else echo 100; fi
+}
+
 clamp() {
-  local v="$1"
+  local v="$1" max
+  max="$(max_pct)"
   (( v < 0 )) && v=0
-  (( v > 100 )) && v=100
+  (( v > max )) && v=$max
   echo "$v"
 }
 

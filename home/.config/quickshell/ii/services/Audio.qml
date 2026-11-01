@@ -19,6 +19,10 @@ Singleton {
     readonly property real hardMaxValue: 2.00 // People keep joking about setting volume to 5172% so...
     property string audioTheme: Config.options.sounds.theme
     property real value: sink?.audio.volume ?? 0
+    // Slider/OSD range. The speaker allows 153% (PulseAudio's UI maximum)
+    // because its EasyEffects presets reserve the headroom. A connected
+    // Bluetooth output stays at 100%. Keep in sync with ee-volume.sh.
+    readonly property real maxVolume: (outputRoute === "headphones" && bluetoothOutputConnected) ? 1.0 : 1.53
 
     // Real hardware output routing (speaker vs connected Bluetooth
     // headset), independent of the PipeWire default sink above, which

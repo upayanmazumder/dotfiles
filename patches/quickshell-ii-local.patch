@@ -306,6 +306,18 @@ index 4eb709c..de3335f 100644
      // Main toolbar: password box
      Toolbar {
          id: mainIsland
+diff --git a/modules/ii/onScreenDisplay/indicators/VolumeIndicator.qml b/modules/ii/onScreenDisplay/indicators/VolumeIndicator.qml
+index da8a690..c949d69 100644
+--- a/modules/ii/onScreenDisplay/indicators/VolumeIndicator.qml
++++ b/modules/ii/onScreenDisplay/indicators/VolumeIndicator.qml
+@@ -4,6 +4,7 @@ import qs.modules.ii.onScreenDisplay
+ 
+ OsdValueIndicator {
+     id: osdValues
++    to: Audio.maxVolume
+     value: Audio.sink?.audio.volume ?? 0
+     icon: Audio.sink?.audio.muted ? "volume_off" : "volume_up"
+     name: Translation.tr("Volume")
 diff --git a/modules/ii/overview/Overview.qml b/modules/ii/overview/Overview.qml
 index b28ff5a..7405eb3 100644
 --- a/modules/ii/overview/Overview.qml
@@ -423,10 +435,14 @@ index f8b1e24..224ecb1 100644
                      }
                      onMovedAway: {
 diff --git a/modules/ii/sidebarRight/QuickSliders.qml b/modules/ii/sidebarRight/QuickSliders.qml
-index 0153505..036848d 100644
+index 0153505..e8c99d1 100644
 --- a/modules/ii/sidebarRight/QuickSliders.qml
 +++ b/modules/ii/sidebarRight/QuickSliders.qml
-@@ -75,6 +75,7 @@ Rectangle {
+@@ -72,9 +72,11 @@ Rectangle {
+             active: Config.options.sidebar.quickSliders.showVolume
+             sourceComponent: QuickSlider {
+                 materialSymbol: "volume_up"
++                to: Audio.maxVolume
                  value: Audio.sink.audio.volume
                  onMoved: {
                      Audio.sink.audio.volume = value
@@ -495,7 +511,7 @@ index e42f735..e57b810 100644
          }
  
 diff --git a/services/Audio.qml b/services/Audio.qml
-index 68ebc3a..adae095 100644
+index 68ebc3a..3230062 100644
 --- a/services/Audio.qml
 +++ b/services/Audio.qml
 @@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
@@ -506,10 +522,14 @@ index 68ebc3a..adae095 100644
  import Quickshell.Services.Pipewire
  
  /**
-@@ -18,6 +19,40 @@ Singleton {
+@@ -18,6 +19,44 @@ Singleton {
      readonly property real hardMaxValue: 2.00 // People keep joking about setting volume to 5172% so...
      property string audioTheme: Config.options.sounds.theme
      property real value: sink?.audio.volume ?? 0
++    // Slider/OSD range. The speaker allows 153% (PulseAudio's UI maximum)
++    // because its EasyEffects presets reserve the headroom. A connected
++    // Bluetooth output stays at 100%. Keep in sync with ee-volume.sh.
++    readonly property real maxVolume: (outputRoute === "headphones" && bluetoothOutputConnected) ? 1.0 : 1.53
 +
 +    // Real hardware output routing (speaker vs connected Bluetooth
 +    // headset), independent of the PipeWire default sink above, which
@@ -547,7 +567,7 @@ index 68ebc3a..adae095 100644
      
      function friendlyDeviceName(node) {
          return (node.nickname || node.description || Translation.tr("Unknown"));
-@@ -49,8 +84,33 @@ Singleton {
+@@ -49,8 +88,33 @@ Singleton {
      signal sinkProtectionTriggered(string reason);
  
      // Controls
@@ -582,7 +602,7 @@ index 68ebc3a..adae095 100644
      }
  
      function toggleMicMute() {
-@@ -58,15 +118,11 @@ Singleton {
+@@ -58,15 +122,11 @@ Singleton {
      }
  
      function incrementVolume() {

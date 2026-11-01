@@ -8,7 +8,7 @@
             "output-gain": 0.0,
             "reference": "Integrated",
             "silence-threshold": -70.0,
-            "target": -16.0
+            "target": -22.0
         },
         "bass_enhancer#0": {
             "amount": 6.0,
@@ -237,7 +237,7 @@
             "attack": 3.0,
             "bypass": false,
             "dithering": "None",
-            "gain-boost": true,
+            "gain-boost": false,
             "input-gain": 0.0,
             "input-to-link": -80.01,
             "input-to-sidechain": -80.01,
@@ -253,7 +253,7 @@
             "sidechain-to-link": -80.01,
             "sidechain-type": "Internal",
             "stereo-link": 100.0,
-            "threshold": -2.0
+            "threshold": -12.0
         },
         "multiband_compressor#0": {
             "band0": {

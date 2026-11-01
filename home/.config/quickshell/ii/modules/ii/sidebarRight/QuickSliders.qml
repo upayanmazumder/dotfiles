@@ -72,6 +72,7 @@ Rectangle {
             active: Config.options.sidebar.quickSliders.showVolume
             sourceComponent: QuickSlider {
                 materialSymbol: "volume_up"
+                to: Audio.maxVolume
                 value: Audio.sink.audio.volume
                 onMoved: {
                     Audio.sink.audio.volume = value

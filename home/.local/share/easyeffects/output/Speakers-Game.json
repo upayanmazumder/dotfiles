@@ -198,8 +198,8 @@
             "attack": 0.25,
             "bypass": false,
             "dithering": "None",
-            "gain-boost": true,
-            "input-gain": 0.0,
+            "gain-boost": false,
+            "input-gain": -8.0,
             "input-to-link": -80.01,
             "input-to-sidechain": -80.01,
             "link-to-input": -80.01,
@@ -214,7 +214,7 @@
             "sidechain-to-link": -80.01,
             "sidechain-type": "Internal",
             "stereo-link": 100.0,
-            "threshold": -1.0
+            "threshold": -12.0
         },
         "plugins_order": [
             "equalizer#0",
