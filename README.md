@@ -2,7 +2,7 @@
 
 My CachyOS setup on Sonder. The desktop starts with [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland). This repo keeps the files I change on top of it: Hyprland overrides, selected Quickshell changes, shell settings, system configuration, and scripts.
 
-`home/` maps to `$HOME`, `etc/` maps to `/etc`, and `usr/` maps to `/usr` (my GRUB theme, plus my changes to the SDDM Silent theme). `scripts/` contains commands linked into `~/Scripts/bin`. Package lists live in `packages/`. I keep the end-4 base in its own checkout so updates to it do not get mixed with my overrides.
+`home/` maps to `$HOME`, `etc/` maps to `/etc`, and `usr/` maps to `/usr` (my GRUB theme, plus my changes to the SDDM Silent theme). `home/.omp/` holds my omp config and the skills it created. `scripts/` contains commands linked into `~/Scripts/bin`. `plymouth-obsidian/` is my own Plymouth boot theme with its installer. Package lists live in `packages/`. I keep the end-4 base in its own checkout so updates to it do not get mixed with my overrides.
 
 ## Setup
 

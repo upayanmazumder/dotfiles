@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Stub lsinitcpio: the mkinitcpio stub already wrote a plain-text listing
+# into the "image" file, so just print it.
+set -euo pipefail
+cat "$1"

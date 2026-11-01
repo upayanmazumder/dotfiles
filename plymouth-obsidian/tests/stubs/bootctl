@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Stub bootctl: only the two invocations bootloader.sh makes.
+set -euo pipefail
+
+if [[ "${1:-}" == "-p" ]]; then
+    echo "${STUB_ESP_PATH:-/boot}"
+    exit 0
+fi
+
+if [[ "${1:-}" == "status" ]]; then
+    echo "System:"
+    echo "      Firmware: UEFI (stub)"
+    echo "Current Boot Loader:"
+    echo "      Product: ${STUB_BOOTCTL_PRODUCT:-systemd-boot 255}"
+    exit 0
+fi
+
+exit 0

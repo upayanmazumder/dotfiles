@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Stub pacman: only understands the two invocations install.sh makes.
+# Installed-state persists via a marker file (STUB_STATE_DIR), since each
+# invocation is a fresh process.
+set -euo pipefail
+log() { echo "[stub:pacman] $*" >> "${STUB_LOG:-/dev/null}"; }
+marker="${STUB_STATE_DIR:?}/plymouth_installed"
+
+if [[ "$1" == "-Qi" ]]; then
+    log "query $2"
+    [[ -f "$marker" ]] && exit 0
+    exit 1
+fi
+
+if [[ "$1" == "-S" ]]; then
+    log "install: $*"
+    touch "$marker"
+    exit 0
+fi
+
+log "unhandled: $*"
+exit 1

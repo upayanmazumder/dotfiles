@@ -1,0 +1,14 @@
+#
+# Obsidian — a minimal, dark, precision-focused Plymouth boot theme.
+#
+# See /usr/share/plymouth/themes/obsidian/obsidian.script for behavior
+# and the project README for design rationale and customization points.
+#
+[Plymouth Theme]
+Name=Obsidian
+Description=Minimal, dark boot theme: flat #0B0F14 field, thin rotating ring indicator, no logo or text.
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/obsidian/assets
+ScriptFile=/usr/share/plymouth/themes/obsidian/obsidian.script

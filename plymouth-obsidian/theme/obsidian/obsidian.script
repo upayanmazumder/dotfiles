@@ -1,0 +1,305 @@
+// ===========================================================================
+// Obsidian — a minimal, dark, precision-focused Plymouth boot theme.
+//
+// Visual model
+//   - A flat #0B0F14 field. No gradients, no logo, no boot text.
+//   - A single thin ring indicator, centered, rotating at a constant rate.
+//     The ring is a pre-rendered sprite sheet (48-tick comet sweep baked
+//     into assets/ring.png by tools/render_assets.py) rotated in real time
+//     via cached Image.Rotate() frames — see build_ring_cache().
+//   - An opaque black curtain sits above everything at start and end,
+//     fading out on entry and back in on quit, so the transition from the
+//     firmware/console's black frame — and back to it — never flashes.
+//   - Password/question prompts render as a hairline + dot field (no
+//     literal text) unless Obsidian.show_prompt_text is enabled.
+//
+// Motion model
+//   Every animated property (curtain opacity, ring opacity, dialog opacity)
+//   is driven by a small tween: {value, target, from, t0, dur}. Calling
+//   *_set(target, duration) captures the CURRENT value as the new "from"
+//   and restarts the timer, so re-targeting mid-animation never jumps.
+//   A single ease_in_out_cubic() curve is used everywhere for consistency.
+//
+// All tunables live at the top of this file under `Obsidian.*`.
+// ===========================================================================
+
+// --------------------------------------------------------------------- //
+// Tunables
+// --------------------------------------------------------------------- //
+Obsidian.refresh_rate = 30;              // frames per second
+
+Obsidian.ring_diameter_fraction = 0.16;  // ring diameter, fraction of window height
+Obsidian.ring_cache_frames = 120;        // pre-rotated frames (smoothness vs. init cost)
+Obsidian.ring_period_ms = 1800;          // ms per full rotation, constant angular speed
+
+Obsidian.curtain_fade_in_ms = 650;       // black curtain -> transparent, on start
+Obsidian.ring_in_delay_ms = 260;         // stagger: ring waits for curtain to settle
+Obsidian.ring_in_ms = 520;
+
+Obsidian.ring_out_ms = 280;              // on quit: ring fades first
+Obsidian.curtain_out_delay_ms = 120;     // ...then curtain closes over it
+Obsidian.curtain_out_ms = 480;
+
+Obsidian.dialog_fade_ms = 260;           // password/question hairline + dots
+Obsidian.dot_diameter_fraction = 0.011;  // fraction of window height
+Obsidian.dot_gap_fraction = 0.020;
+Obsidian.dot_max = 24;
+Obsidian.line_width_fraction = 0.15;     // fraction of window width
+Obsidian.dialog_gap_fraction = 0.085;    // gap below the ring, fraction of window height
+
+Obsidian.show_prompt_text = 0;           // 1 = also render the prompt string, small and dim
+
+// --------------------------------------------------------------------- //
+// Small math helpers (pure — safe to call with plain numbers)
+// --------------------------------------------------------------------- //
+fun ease_in_out_cubic(t) {
+    if (t < 0.5) {
+        return 4 * t * t * t;
+    }
+    p = -2 * t + 2;
+    return 1 - (p * p * p) / 2;
+}
+
+fun lerp(a, b, t) {
+    return a + (b - a) * t;
+}
+
+fun tween_value(value, target, from, t0, dur) {
+    if (dur <= 0) {
+        return target;
+    }
+    t = Math.Clamp((elapsed_ms - t0) / dur, 0, 1);
+    return lerp(from, target, ease_in_out_cubic(t));
+}
+
+// --------------------------------------------------------------------- //
+// Global animation clock — synthetic, driven by the refresh callback so
+// pacing stays tied to Obsidian.refresh_rate regardless of wall-clock jitter.
+// --------------------------------------------------------------------- //
+elapsed_ms = 0;
+
+// --------------------------------------------------------------------- //
+// Tween state (curtain, ring, dialog opacities)
+// --------------------------------------------------------------------- //
+anim.curtain.value = 1; anim.curtain.target = 1; anim.curtain.from = 1;
+anim.curtain.t0 = 0;     anim.curtain.dur = 1;
+
+anim.ring.value = 0; anim.ring.target = 0; anim.ring.from = 0;
+anim.ring.t0 = 0;    anim.ring.dur = 1;
+
+anim.dialog.value = 0; anim.dialog.target = 0; anim.dialog.from = 0;
+anim.dialog.t0 = 0;     anim.dialog.dur = 1;
+
+fun curtain_set(target, dur) {
+    if (anim.curtain.target != target) {
+        anim.curtain.from = anim.curtain.value;
+        anim.curtain.t0 = elapsed_ms;
+        anim.curtain.dur = dur;
+        anim.curtain.target = target;
+    }
+}
+
+fun ring_set(target, dur) {
+    if (anim.ring.target != target) {
+        anim.ring.from = anim.ring.value;
+        anim.ring.t0 = elapsed_ms;
+        anim.ring.dur = dur;
+        anim.ring.target = target;
+    }
+}
+
+fun dialog_set(target, dur) {
+    if (anim.dialog.target != target) {
+        anim.dialog.from = anim.dialog.value;
+        anim.dialog.t0 = elapsed_ms;
+        anim.dialog.dur = dur;
+        anim.dialog.target = target;
+    }
+}
+
+// --------------------------------------------------------------------- //
+// Scene state
+// --------------------------------------------------------------------- //
+// `ring`, `curtain` and `dot` are populated from inside build_*() below.
+// They must be touched here, at true top-level (= global) scope, first —
+// otherwise the engine treats their first dot-assignment (inside a
+// function) as creating a function-local hash, invisible to every other
+// callback that reads them afterwards.
+ring;
+curtain;
+dot;
+
+quitting = 0;
+quit_start_ms = 0;
+quit_curtain_triggered = 0;
+ring_in_triggered = 0;
+dialog.active_bullets = 0;
+
+// --------------------------------------------------------------------- //
+// Build the ring: scale the master asset to the target on-screen size,
+// then cache a full rotation's worth of pre-rotated frames so refresh()
+// only ever swaps an image pointer instead of rotating in real time.
+// --------------------------------------------------------------------- //
+fun build_ring_cache() {
+    ring.diameter = Math.Int(Window.GetHeight() * Obsidian.ring_diameter_fraction);
+    ring.base = Image("ring.png").Scale(ring.diameter, ring.diameter);
+
+    for (i = 0; i < Obsidian.ring_cache_frames; i++) {
+        ring.cache[i] = ring.base.Rotate(2 * Math.Pi * i / Obsidian.ring_cache_frames);
+    }
+
+    ring.sprite = Sprite(ring.cache[0]);
+    ring.x = Window.GetX() + (Window.GetWidth() - ring.diameter) / 2;
+    ring.y = Window.GetY() + (Window.GetHeight() - ring.diameter) / 2;
+    ring.sprite.SetPosition(ring.x, ring.y, 100);
+    ring.sprite.SetOpacity(0);
+}
+
+// --------------------------------------------------------------------- //
+// Build the full-window curtain used for the entry/exit fade.
+// --------------------------------------------------------------------- //
+fun build_curtain() {
+    curtain.image = Image("pixel_black.png").Scale(Window.GetWidth(), Window.GetHeight());
+    curtain.sprite = Sprite(curtain.image);
+    curtain.sprite.SetPosition(Window.GetX(), Window.GetY(), 10000);
+    curtain.sprite.SetOpacity(1);
+}
+
+// --------------------------------------------------------------------- //
+// Build the password/question dialog: a centered hairline beneath the
+// ring, plus a row of small dots that light up per character entered.
+// No literal text is rendered unless Obsidian.show_prompt_text is set.
+// --------------------------------------------------------------------- //
+fun build_dialog() {
+    line_w = Math.Int(Window.GetWidth() * Obsidian.line_width_fraction);
+    line_h = Math.Int(Math.Max(2, Window.GetHeight() / 650));
+    dialog.line_sprite = Sprite(Image("pixel_accent.png").Scale(line_w, line_h));
+    dialog.line_x = Window.GetX() + (Window.GetWidth() - line_w) / 2;
+    dialog.line_y = ring.y + ring.diameter + Math.Int(Window.GetHeight() * Obsidian.dialog_gap_fraction);
+    dialog.line_sprite.SetPosition(dialog.line_x, dialog.line_y, 100);
+    dialog.line_sprite.SetOpacity(0);
+
+    dot.diameter = Math.Int(Math.Max(4, Window.GetHeight() * Obsidian.dot_diameter_fraction));
+    dot.image = Image("dot.png").Scale(dot.diameter, dot.diameter);
+    dot.gap = Math.Int(Window.GetHeight() * Obsidian.dot_gap_fraction);
+
+    row_y = dialog.line_y - dot.diameter - Math.Int(Window.GetHeight() * 0.018);
+    for (i = 0; i < Obsidian.dot_max; i++) {
+        dot.sprite[i] = Sprite(dot.image);
+        dot.x[i] = dialog.line_x + i * dot.gap;
+        dot.sprite[i].SetPosition(dot.x[i], row_y, 101);
+        dot.sprite[i].SetOpacity(0);
+    }
+
+    if (Obsidian.show_prompt_text) {
+        dialog.prompt_sprite = Sprite();
+        dialog.prompt_sprite.SetPosition(dialog.line_x, dialog.line_y - dot.diameter - Math.Int(Window.GetHeight() * 0.05), 101);
+        dialog.prompt_sprite.SetOpacity(0);
+    }
+}
+
+// --------------------------------------------------------------------- //
+// Init
+// --------------------------------------------------------------------- //
+fun init() {
+    // Flat field — deliberately no gradient.
+    Window.SetBackgroundTopColor(0.0431, 0.0588, 0.0784);
+    Window.SetBackgroundBottomColor(0.0431, 0.0588, 0.0784);
+    Plymouth.SetRefreshRate(Obsidian.refresh_rate);
+
+    build_curtain();
+    build_ring_cache();
+    build_dialog();
+
+    curtain_set(0, Obsidian.curtain_fade_in_ms);
+}
+
+// --------------------------------------------------------------------- //
+// Refresh — called Obsidian.refresh_rate times per second.
+// --------------------------------------------------------------------- //
+fun refresh_callback() {
+    elapsed_ms += 1000 / Obsidian.refresh_rate;
+
+    // Stagger the ring's entrance behind the curtain fade.
+    if (!ring_in_triggered && elapsed_ms >= Obsidian.ring_in_delay_ms) {
+        ring_set(1, Obsidian.ring_in_ms);
+        ring_in_triggered = 1;
+    }
+
+    // Stagger the curtain's return behind the ring's exit, on quit.
+    if (quitting && !quit_curtain_triggered
+        && (elapsed_ms - quit_start_ms) >= Obsidian.curtain_out_delay_ms) {
+        curtain_set(1, Obsidian.curtain_out_ms);
+        quit_curtain_triggered = 1;
+    }
+
+    anim.curtain.value = tween_value(anim.curtain.value, anim.curtain.target, anim.curtain.from, anim.curtain.t0, anim.curtain.dur);
+    anim.ring.value = tween_value(anim.ring.value, anim.ring.target, anim.ring.from, anim.ring.t0, anim.ring.dur);
+    anim.dialog.value = tween_value(anim.dialog.value, anim.dialog.target, anim.dialog.from, anim.dialog.t0, anim.dialog.dur);
+
+    curtain.sprite.SetOpacity(anim.curtain.value);
+
+    // Constant angular velocity — a steady mechanical sweep, no easing.
+    progress = (elapsed_ms % Obsidian.ring_period_ms) / Obsidian.ring_period_ms;
+    frame = Math.Int(progress * Obsidian.ring_cache_frames) % Obsidian.ring_cache_frames;
+    ring.sprite.SetImage(ring.cache[frame]);
+    ring.sprite.SetOpacity(anim.ring.value);
+
+    dialog.line_sprite.SetOpacity(anim.dialog.value);
+    for (i = 0; i < Obsidian.dot_max; i++) {
+        if (i < dialog.active_bullets) {
+            dot.sprite[i].SetOpacity(anim.dialog.value);
+        } else {
+            dot.sprite[i].SetOpacity(0);
+        }
+    }
+    if (Obsidian.show_prompt_text) {
+        dialog.prompt_sprite.SetOpacity(anim.dialog.value);
+    }
+}
+
+// --------------------------------------------------------------------- //
+// Mode callbacks
+// --------------------------------------------------------------------- //
+fun show_prompt(prompt, bullet_count) {
+    dialog_set(1, Obsidian.dialog_fade_ms);
+    dialog.active_bullets = Math.Min(bullet_count, Obsidian.dot_max);
+    if (Obsidian.show_prompt_text) {
+        text_image = Image.Text(prompt, 0.549, 0.635, 0.706, 0.85, "Sans 10");
+        dialog.prompt_sprite.SetImage(text_image);
+    }
+}
+
+fun display_normal_callback() {
+    dialog_set(0, Obsidian.dialog_fade_ms);
+    dialog.active_bullets = 0;
+}
+
+fun display_password_callback(prompt, bullets) {
+    show_prompt(prompt, bullets);
+}
+
+fun display_question_callback(prompt, entry_text) {
+    show_prompt(prompt, entry_text.Length());
+}
+
+fun quit_callback() {
+    quitting = 1;
+    quit_start_ms = elapsed_ms;
+    quit_curtain_triggered = 0;
+    ring_set(0, Obsidian.ring_out_ms);
+    dialog_set(0, Obsidian.dialog_fade_ms);
+}
+
+// --------------------------------------------------------------------- //
+// Wire everything up
+// --------------------------------------------------------------------- //
+init();
+
+Plymouth.SetRefreshFunction(refresh_callback);
+Plymouth.SetDisplayNormalFunction(display_normal_callback);
+Plymouth.SetDisplayPasswordFunction(display_password_callback);
+Plymouth.SetDisplayQuestionFunction(display_question_callback);
+Plymouth.SetQuitFunction(quit_callback);
+
+// vi: ft=c

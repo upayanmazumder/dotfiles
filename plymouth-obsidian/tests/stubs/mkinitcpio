@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Stub mkinitcpio: simulates -P by writing a fake initramfs image whose
+# "content listing" (read by the lsinitcpio stub) reflects whatever theme
+# files currently exist under /usr/share/plymouth/themes/, mimicking a real
+# rebuild picking up the currently-selected theme.
+set -euo pipefail
+log() { echo "[stub:mkinitcpio] $*" >> "${STUB_LOG:-/dev/null}"; }
+log "invoked: $*"
+
+mkdir -p /boot
+out=/boot/initramfs-linux.img
+: > "$out"
+if [[ -d /usr/share/plymouth/themes ]]; then
+    while IFS= read -r -d '' f; do
+        rel="${f#/}"
+        echo "$rel" >> "$out"
+    done < <(find /usr/share/plymouth/themes -type f -print0 2>/dev/null)
+fi
+log "wrote $out"

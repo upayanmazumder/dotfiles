@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Stub plymouth-set-default-theme: mirrors the real tool's two modes —
+# no args prints the current theme; one positional arg sets it.
+set -euo pipefail
+conf=/etc/plymouth/plymouthd.conf
+
+current_theme() {
+    [[ -f "$conf" ]] || { echo "bgrt"; return; }
+    grep -E '^Theme=' "$conf" | tail -n1 | cut -d= -f2- || echo "bgrt"
+}
+
+if [[ $# -eq 0 ]]; then
+    current_theme
+    exit 0
+fi
+
+theme="$1"
+mkdir -p "$(dirname -- "$conf")"
+if [[ -f "$conf" ]] && grep -qE '^\[Daemon\]' "$conf"; then
+    if grep -qE '^Theme=' "$conf"; then
+        sed -i -E "s/^Theme=.*/Theme=${theme}/" "$conf"
+    else
+        sed -i -E "/^\[Daemon\]/a Theme=${theme}" "$conf"
+    fi
+else
+    { echo "[Daemon]"; echo "Theme=${theme}"; } >> "$conf"
+fi

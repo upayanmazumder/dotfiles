@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Stub sdboot-manage: "gen" bakes LINUX_OPTIONS into the primary loader
+# entry, like the real tool regenerating entries from config.
+set -euo pipefail
+log() { echo "[stub:sdboot-manage] $*" >> "${STUB_LOG:-/dev/null}"; }
+log "invoked: $*"
+
+[[ "${1:-}" == "gen" ]] || exit 0
+
+conf=/etc/sdboot-manage.conf
+opts="$(grep -E '^LINUX_OPTIONS=' "$conf" 2>/dev/null | sed -E 's/^LINUX_OPTIONS="?(.*)"?$/\1/; s/"$//')"
+
+mkdir -p /boot/loader/entries
+{
+    echo "title CachyOS Linux"
+    echo "linux /vmlinuz-linux-cachyos"
+    echo "initrd /initramfs-linux-cachyos.img"
+    echo "options root=UUID=stub rw ${opts}"
+} > /boot/loader/entries/cachyos.conf
+log "wrote /boot/loader/entries/cachyos.conf"
