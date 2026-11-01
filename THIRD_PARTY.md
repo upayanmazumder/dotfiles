@@ -4,7 +4,7 @@ This repo is licensed under GPL-3.0 (see `LICENSE`). Several files come from oth
 
 ## end-4/dots-hyprland
 
-Files under `home/.config/quickshell/ii/` and `patches/quickshell-ii-local.patch` are modified copies of, or additions to, [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland), which is GPL-3.0. The patch was made against upstream commit `301185c7`. Upstream copyright notices in those files stay in place.
+Files under `home/.config/quickshell/ii/`, `patches/quickshell-ii-local.patch`, and `patches/hyprland-local.patch` are modified copies of, or additions to, [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland), which is GPL-3.0. The patches were made against upstream commit `301185c7`. Upstream copyright notices in those files stay in place.
 
 `home/.config/quickshell/ii/services/MprisController.qml` has a header saying it comes from [outfoxxed/nixnew](https://git.outfoxxed.me/outfoxxed/nixnew). The header says that code has no license but the author allows redistribution. Keep the header intact.
 
@@ -23,6 +23,10 @@ Files under `home/.config/quickshell/ii/` and `patches/quickshell-ii-local.patch
 ## DolphinGlass color scheme
 
 `home/.local/share/color-schemes/DolphinGlass.colors` derives from a KDE color scheme and keeps its LGPL-2.0-or-later SPDX header with the KDE authors' names.
+
+## SpectrumNoir color scheme
+
+`home/.local/share/color-schemes/SpectrumNoir.colors` is CC-BY-SA-4.0. It derives from [Sweet KDE](https://github.com/EliverLara/Sweet-kde) by EliverLara. Keep the SPDX header intact.
 
 ## SDDM Silent theme
 

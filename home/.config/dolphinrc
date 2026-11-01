@@ -1,5 +1,6 @@
 [DetailsMode]
 PreviewSize=32
+RightPadding=375
 
 [General]
 ConfirmClosingTerminalRunningProgram=false
@@ -7,7 +8,7 @@ GlobalViewProps=false
 ShowFullPath=true
 ShowStatusBar=FullWidth
 Version=202
-ViewPropsTimestamp=2026,9,27,1,28,36.324
+ViewPropsTimestamp=2026,10,28,10,2,31.607
 
 [IconsMode]
 PreviewSize=144
@@ -27,4 +28,4 @@ ShowPasteHugeTextWarning=false
 Plugins=ffmpegthumbnailer,appimagethumbnail,audiothumbnail,avif,blenderthumbnail,comicbookthumbnail,cursorthumbnail,djvuthumbnail,ebookthumbnail,exrthumbnail,directorythumbnail,fontthumbnail,heif,imagethumbnail,jpegthumbnail,jxl,kraorathumbnail,windowsexethumbnail,windowsimagethumbnail,mobithumbnail,opendocumentthumbnail,gsthumbnail,rawthumbnail,librsvg,svgthumbnail,ffmpegthumbs,gdk-pixbuf-thumbnailer,gsf-office
 
 [UiSettings]
-ColorScheme=DolphinGlass
+ColorScheme=SpectrumNoir

@@ -18,23 +18,11 @@
 # built-in speaker -- matching the priority in
 # 51-bluetooth-audio-priority.conf) and adjusts that sink directly.
 #
-# HARD CAP AT 150%
-# -----------------
-# This is a REAL hardware/bluez sink, not the cosmetic easyeffects_sink
-# -- volume here is genuine gain applied to the physical output. Above
-# 100% (0dB, unity gain) this is software boost applied AFTER the whole
-# EasyEffects chain -- EE's own limiter sits upstream of this final sink
-# gain. That used to hard-clip on loud/bass-heavy material. Since
-# 2026-09-23 the Speakers-Balanced preset carries ~10 dB of headroom for
-# exactly this (EQ output-gain -12, limiter threshold -11), so a 150%
-# boost lands at about -0.43 dBFS instead of +9.57 dBFS. That headroom
-# and this cap are coupled: raising the cap above 150% requires lowering
-# the limiter threshold by the same amount in the preset, or clipping
-# comes straight back. 150% is also the ceiling GNOME/KDE default to for
-# weak laptop speakers. Remaining breakup at 150% on bass-heavy tracks is
-# driver excursion, not clipping -- see docs/machine.md. The raise-volume
-# key repeats while held, so relative "+2%" with no ceiling at all would
-# climb unbounded -- always clamp to an absolute value in [0, 150].
+# HARD CAP AT 100%
+# ----------------
+# The active presets do not reserve enough headroom for post-effect gain.
+# Values above 100% amplify the real sink after the EasyEffects limiter.
+# Limit volume keys and slider changes to unity gain to prevent clipping.
 #
 # SINGLE SOURCE OF TRUTH
 # -----------------------
@@ -70,7 +58,7 @@ current_pct() {
 clamp() {
   local v="$1"
   (( v < 0 )) && v=0
-  (( v > 150 )) && v=150
+  (( v > 100 )) && v=100
   echo "$v"
 }
 

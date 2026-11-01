@@ -37,9 +37,12 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/audio-output-routing.s
 
 action="${1:-status}"
 
-# Apply the intent now if possible, and prod the daemon either way.
+# Apply the hardware default first so EasyEffects tracks the new output.
 apply_route() {
-  relink_ee_output "$(desired_sink_name)"
+  local target
+  target=$(desired_sink_name)
+  pactl set-default-sink "$target" || return 1
+  relink_ee_output "$target"
   wake_converger
 }
 

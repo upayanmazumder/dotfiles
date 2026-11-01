@@ -1,0 +1,53 @@
+setupVersion: 2
+statusLine:
+  transparent: true
+  compactThinkingLevel: false
+terminal:
+  showProgress: false
+tui:
+  textSizing: true
+display:
+  shimmer: kitt
+  showTokenUsage: true
+  cacheMissMarker: false
+  hideToolActivity: true
+memory:
+  backend: hindsight
+autolearn:
+  enabled: true
+modelRoles:
+  plan: anthropic/claude-opus-5:medium
+  commit: anthropic/claude-haiku-4-5:high
+  tiny: anthropic/claude-haiku-4-5:off
+  vision: anthropic/claude-opus-5:high
+dev:
+  autoqaConsent: granted
+security:
+  enabled: true
+computer:
+  enabled: true
+checkpoint:
+  enabled: true
+vault:
+  enabled: true
+astGrep:
+  enabled: true
+github:
+  enabled: true
+composer:
+  shape: box
+autoResume: true
+bash:
+  enabled: true
+task:
+  enableLsp: true
+browser:
+  relay: true
+branchSummary:
+  enabled: false
+compaction:
+  enabled: true
+claudeResets:
+  autoRedeem: "no"
+codexResets:
+  autoRedeem: "no"

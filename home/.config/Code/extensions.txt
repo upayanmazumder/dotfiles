@@ -53,6 +53,7 @@ ms-vscode.powershell
 ms-vscode.remote-explorer
 ms-vscode.remote-server
 openai.chatgpt
+openai.codex-audio
 oracle.oracle-java
 redhat.java
 redhat.vscode-yaml
@@ -64,8 +65,10 @@ shinhwagk.mkstring
 tomoki1207.pdf
 tonybaloney.vscode-pets
 tooark.ark-format-powershell
+trentquacks.mocha-transparent
 tuinhanne.lex-template
 twxs.cmake
+upayanmazumder.auxflow
 vscjava.migrate-java-to-azure
 vscjava.vscode-gradle
 vscjava.vscode-java-debug

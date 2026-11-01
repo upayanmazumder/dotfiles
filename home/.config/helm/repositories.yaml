@@ -64,3 +64,12 @@ repositories:
   password: ""
   url: https://seaweedfs.github.io/seaweedfs/helm
   username: ""
+- caFile: ""
+  certFile: ""
+  insecure_skip_tls_verify: false
+  keyFile: ""
+  name: argo-cd
+  pass_credentials_all: false
+  password: ""
+  url: https://argoproj.github.io/argo-helm
+  username: ""

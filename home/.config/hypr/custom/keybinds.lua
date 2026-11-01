@@ -119,3 +119,30 @@ hl.bind("SUPER + SHIFT + Space", hl.dsp.exec_cmd(bin .. "/dev-palette"),
 hl.bind("SUPER + ALT + G",
     hl.dsp.exec_cmd("kitty sh -c 'p=$(" .. bin .. "/project-open --print) && cd \"$p\" && lazygit'"),
     { description = "Dev: lazygit (pick project)" })
+
+-- ── Super tap = search; Super+<key> must NOT toggle search ──────────────
+-- The framework binds a bare Super press to quickshell:searchToggleRelease,
+-- whose release handler toggles search unless quickshell:searchToggleReleaseInterrupt
+-- ran in between (see Overview.qml / WaffleStartMenu.qml). Upstream's .conf
+-- sent the interrupt from a `catchall` bind in an auto-entered submap; the
+-- Lua port of the framework keybinds.lua has no equivalent, so every
+-- Super+<key> chord opened search on Super release.
+-- Hyprland 0.57 emits `input.keyboard.key`, so send the interrupt from there:
+-- once per Super hold, on the first non-Super key press. Global dispatch
+-- is in-process (no spawn), so the handler never blocks.
+local SUPER_KEYCODES = { [133] = true, [134] = true } -- XKB: Super_L, Super_R
+local superHeld = 0
+local interruptSent = false
+hl.on("input.keyboard.key", function(keycode, _, state)
+    if SUPER_KEYCODES[keycode] then
+        if state == 1 then
+            superHeld = superHeld + 1
+        elseif state == 0 then
+            superHeld = math.max(0, superHeld - 1)
+            if superHeld == 0 then interruptSent = false end
+        end
+    elseif state == 1 and superHeld > 0 and not interruptSent then
+        interruptSent = true
+        hl.dispatch(hl.dsp.global("quickshell:searchToggleReleaseInterrupt"))
+    end
+end)

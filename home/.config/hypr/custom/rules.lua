@@ -40,9 +40,6 @@ hl.window_rule({ match = { class = "^(kitty-notes)$" },   workspace = "special:n
 -- whatever is underneath.
 hl.window_rule({ match = { class = "^(dev\\.zed\\.Zed)$" }, no_blur = false })
 
--- Keep Dolphin's native Kvantum transparency and blur the desktop behind it.
-hl.window_rule({ match = { class = "^(org\\.kde\\.dolphin)$" }, no_blur = false })
-
 -- ── Transparent EasyEffects ────────────────────────────────────────────────
 -- EasyEffects is GTK4/libadwaita, so Kvantum cannot provide translucency.
 -- Keep its existing compositor opacity without changing its blur behavior.
@@ -66,7 +63,6 @@ hl.window_rule({ match = { class = "^(com\\.github\\.wwmm\\.easyeffects)$" }, op
 -- apps this machine already treats as a matched pair, not the full window
 -- set. Deliberately NOT applied to document/text-heavy apps (LibreOffice,
 -- Dolphin) because whole-window opacity would reduce text contrast.
--- Dolphin uses native Kvantum alpha and a separate blur rule above.
 hl.window_rule({ match = { class = "^(Spotify|discord|org\\.telegram\\.desktop|com\\.rtosta\\.zapzap)$" }, no_blur = false, opacity = "0.88 0.80" })
 
 -- ── Glass for the browser ──────────────────────────────────────────────

@@ -33,8 +33,8 @@
     "dock": "right"
   },
   "cli_default_open_behavior": "existing_window",
-  "theme": "One Dark Pro Glass",
-  "icon_theme": "Material Icon Theme",
+  "theme": "Catppuccin Mocha (Blur) [Heavy]",
+  "icon_theme": "Catppuccin Mocha",
   "base_keymap": "VSCode",
 
   // Zed's llama.cpp provider defaults to probing http://localhost:8080 and

@@ -44,9 +44,11 @@ GRUB_DISABLE_RECOVERY='true'
 
 # Uncomment one of them for the gfx desired, a image background or a gfxtheme
 #GRUB_BACKGROUND="wallpaper"
-# The sonder theme and item.pf2 must be installed under /usr/share/grub/themes/sonder.
-GRUB_THEME=/usr/share/grub/themes/sonder/theme.txt
-GRUB_FONT=/usr/share/grub/themes/sonder/item.pf2
+# The astronaut theme is a third-party GRUB theme. It is not in this repo.
+# Install it under /usr/share/grub/themes/astronaut first. The tracked
+# usr/share/grub/themes/sonder theme is my own and is currently unused.
+GRUB_THEME=/usr/share/grub/themes/astronaut/theme.txt
+GRUB_FONT=/usr/share/grub/themes/astronaut/JetBrainsMono_34.pf2
 
 # Uncomment to get a beep at GRUB start
 #GRUB_INIT_TUNE="480 440 1"

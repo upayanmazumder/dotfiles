@@ -1,5 +1,5 @@
 # Local modifications to the dots-hyprland 'ii' Quickshell config.
-# Baseline: upstream commit aed4d1ec (~/.local/share/dots-hyprland, branch main)
+# Baseline: upstream commit 301185c7 (~/dev/upayanmazumder/dots-hyprland, branch main)
 # Regenerate: see docs/machine.md 'Local Quickshell modifications'
 # Apply after a dots update:  cd ~/.config/quickshell/ii && patch -p1 < .../quickshell-ii-local.patch
 
@@ -17,7 +17,7 @@ index bedf01e..b5e3e9f 100644
      }
  
 diff --git a/modules/common/Config.qml b/modules/common/Config.qml
-index 5fcd1bb..9a8c323 100644
+index ee068bd..1dc7d86 100644
 --- a/modules/common/Config.qml
 +++ b/modules/common/Config.qml
 @@ -203,6 +203,12 @@ Singleton {
@@ -54,6 +54,61 @@ index 78b0a9e..ca8ef93 100644
      property string userAvatarPathRicersAndWeirdSystems2: FileUtils.trimFileProtocol(`${Directories.home}.face.icon`)
      // Cleanup on init
      Component.onCompleted: {
+diff --git a/modules/common/models/quickToggles/HotspotToggle.qml b/modules/common/models/quickToggles/HotspotToggle.qml
+new file mode 100644
+index 0000000..9902fee
+--- /dev/null
++++ b/modules/common/models/quickToggles/HotspotToggle.qml
+@@ -0,0 +1,49 @@
++import QtQuick
++import Quickshell
++import Quickshell.Io
++import qs.services
++import qs.modules.common
++import qs.modules.common.functions
++
++QuickToggleModel {
++    id: root
++    readonly property string script: FileUtils.trimFileProtocol(Directories.home) + "/Scripts/bin/hotspot"
++
++    name: Translation.tr("Hotspot")
++    icon: "wifi_tethering"
++    tooltipText: Translation.tr("Sonder hotspot")
++    available: !actionProcess.running
++    mainAction: () => {
++        if (!actionProcess.running)
++            actionProcess.exec([root.script, root.toggled ? "stop" : "--daemon"])
++    }
++
++    function refresh() {
++        if (!statusProcess.running && !actionProcess.running)
++            statusProcess.running = true
++    }
++
++    Component.onCompleted: refresh()
++
++    Timer {
++        interval: 5000
++        running: true
++        repeat: true
++        onTriggered: root.refresh()
++    }
++
++    Process {
++        id: statusProcess
++        command: [root.script, "status"]
++        onExited: (exitCode, exitStatus) => root.toggled = exitCode === 0
++    }
++
++    Process {
++        id: actionProcess
++        onExited: (exitCode, exitStatus) => {
++            root.refresh()
++            if (exitCode !== 0)
++                Quickshell.execDetached(["notify-send", Translation.tr("Hotspot"), Translation.tr("Could not change hotspot. Check authentication and create_ap.")])
++        }
++    }
++}
 diff --git a/modules/ii/background/Background.qml b/modules/ii/background/Background.qml
 index 7841fe1..5572b70 100644
 --- a/modules/ii/background/Background.qml
@@ -251,6 +306,96 @@ index 4eb709c..de3335f 100644
      // Main toolbar: password box
      Toolbar {
          id: mainIsland
+diff --git a/modules/ii/overview/Overview.qml b/modules/ii/overview/Overview.qml
+index b28ff5a..7405eb3 100644
+--- a/modules/ii/overview/Overview.qml
++++ b/modules/ii/overview/Overview.qml
+@@ -14,6 +14,7 @@ import Quickshell.Hyprland
+ Scope {
+     id: overviewScope
+     property bool dontAutoCancelSearch: false
++    property bool showWorkspaces: true
+ 
+     PanelWindow {
+         id: panelWindow
+@@ -94,10 +95,10 @@ Scope {
+             Loader {
+                 id: overviewLoader
+                 anchors.horizontalCenter: parent.horizontalCenter
+-                active: GlobalStates.overviewOpen && (Config?.options.overview.enable ?? true)
++                active: GlobalStates.overviewOpen && overviewScope.showWorkspaces && (Config?.options.overview.enable ?? true)
+                 sourceComponent: OverviewWidget {
+                     screen: panelWindow.screen
+-                    visible: (panelWindow.searchingText == "")
++                    visible: overviewScope.showWorkspaces && (panelWindow.searchingText == "")
+                 }
+             }
+         }
+@@ -127,10 +128,20 @@ Scope {
+         target: "search"
+ 
+         function toggle() {
+-            GlobalStates.overviewOpen = !GlobalStates.overviewOpen;
++            if (GlobalStates.overviewOpen && !overviewScope.showWorkspaces) {
++                GlobalStates.overviewOpen = false;
++            } else {
++                overviewScope.showWorkspaces = false;
++                GlobalStates.overviewOpen = true;
++            }
+         }
+         function workspacesToggle() {
+-            GlobalStates.overviewOpen = !GlobalStates.overviewOpen;
++            if (GlobalStates.overviewOpen && overviewScope.showWorkspaces) {
++                GlobalStates.overviewOpen = false;
++            } else {
++                overviewScope.showWorkspaces = true;
++                GlobalStates.overviewOpen = true;
++            }
+         }
+         function close() {
+             GlobalStates.overviewOpen = false;
+@@ -151,7 +162,12 @@ Scope {
+         description: "Toggles search on press"
+ 
+         onPressed: {
+-            GlobalStates.overviewOpen = !GlobalStates.overviewOpen;
++            if (GlobalStates.overviewOpen && !overviewScope.showWorkspaces) {
++                GlobalStates.overviewOpen = false;
++            } else {
++                overviewScope.showWorkspaces = false;
++                GlobalStates.overviewOpen = true;
++            }
+         }
+     }
+     GlobalShortcut {
+@@ -167,7 +183,12 @@ Scope {
+         description: "Toggles overview on press"
+ 
+         onPressed: {
+-            GlobalStates.overviewOpen = !GlobalStates.overviewOpen;
++            if (GlobalStates.overviewOpen && overviewScope.showWorkspaces) {
++                GlobalStates.overviewOpen = false;
++            } else {
++                overviewScope.showWorkspaces = true;
++                GlobalStates.overviewOpen = true;
++            }
+         }
+     }
+     GlobalShortcut {
+@@ -183,7 +204,12 @@ Scope {
+                 GlobalStates.superReleaseMightTrigger = true;
+                 return;
+             }
+-            GlobalStates.overviewOpen = !GlobalStates.overviewOpen;
++            if (GlobalStates.overviewOpen && !overviewScope.showWorkspaces) {
++                GlobalStates.overviewOpen = false;
++            } else {
++                overviewScope.showWorkspaces = false;
++                GlobalStates.overviewOpen = true;
++            }
+         }
+     }
+     GlobalShortcut {
 diff --git a/modules/ii/screenCorners/ScreenCorners.qml b/modules/ii/screenCorners/ScreenCorners.qml
 index f8b1e24..224ecb1 100644
 --- a/modules/ii/screenCorners/ScreenCorners.qml
@@ -289,6 +434,54 @@ index 0153505..036848d 100644
                  }
              }
          }
+diff --git a/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml b/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
+index 8457b3c..0d39186 100644
+--- a/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
++++ b/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
+@@ -29,7 +29,7 @@ AbstractQuickPanel {
+     readonly property real baseCellHeight: 56
+ 
+     // Toggles
+-    readonly property list<string> availableToggleTypes: ["network", "bluetooth", "idleInhibitor", "easyEffects", "nightLight", "darkMode", "cloudflareWarp", "gameMode", "screenSnip", "colorPicker", "onScreenKeyboard", "mic", "audio", "notifications", "powerProfile","musicRecognition", "antiFlashbang"]
++    readonly property list<string> availableToggleTypes: ["network", "bluetooth", "idleInhibitor", "easyEffects", "nightLight", "darkMode", "cloudflareWarp", "hotspot", "gameMode", "screenSnip", "colorPicker", "onScreenKeyboard", "mic", "audio", "notifications", "powerProfile","musicRecognition", "antiFlashbang"]
+     readonly property int columns: Config.options.sidebar.quickToggles.android.columns
+     readonly property list<var> toggles: Config.ready ? Config.options.sidebar.quickToggles.android.toggles : []
+     readonly property list<var> toggleRows: toggleRowsForList(toggles)
+diff --git a/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidHotspotToggle.qml b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidHotspotToggle.qml
+new file mode 100644
+index 0000000..22487af
+--- /dev/null
++++ b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidHotspotToggle.qml
+@@ -0,0 +1,5 @@
++import qs.modules.common.models.quickToggles
++
++AndroidQuickToggleButton {
++    toggleModel: HotspotToggle {}
++}
+diff --git a/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml
+index 0106249..7c6e1f5 100644
+--- a/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml
++++ b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml
+@@ -148,6 +148,19 @@ DelegateChooser {
+         cellSize: modelData.size
+     } }
+ 
++    DelegateChoice { roleValue: "hotspot"; AndroidHotspotToggle {
++        required property int index
++        required property var modelData
++        buttonIndex: root.startingIndex + index
++        buttonData: modelData
++        editMode: root.editMode
++        expandedSize: modelData.size > 1
++        baseCellWidth: root.baseCellWidth
++        baseCellHeight: root.baseCellHeight
++        cellSpacing: root.spacing
++        cellSize: modelData.size
++    } }
++
+     DelegateChoice { roleValue: "mic"; AndroidMicToggle {
+         required property int index
+         required property var modelData
 diff --git a/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml b/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml
 index e42f735..e57b810 100644
 --- a/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml
@@ -427,88 +620,3 @@ index 7faed22..0ce855f 100644
      }
  
  	// Original stuff from fox below
-diff --git a/modules/common/models/quickToggles/HotspotToggle.qml b/modules/common/models/quickToggles/HotspotToggle.qml
---- /dev/null
-+++ b/modules/common/models/quickToggles/HotspotToggle.qml
-@@ -0,0 +1,49 @@
-+import QtQuick
-+import Quickshell
-+import Quickshell.Io
-+import qs.services
-+import qs.modules.common
-+import qs.modules.common.functions
-+
-+QuickToggleModel {
-+    id: root
-+    readonly property string script: FileUtils.trimFileProtocol(Directories.home) + "/Scripts/bin/hotspot"
-+
-+    name: Translation.tr("Hotspot")
-+    icon: "wifi_tethering"
-+    tooltipText: Translation.tr("Sonder hotspot")
-+    available: !actionProcess.running
-+    mainAction: () => {
-+        if (!actionProcess.running)
-+            actionProcess.exec([root.script, root.toggled ? "stop" : "--daemon"])
-+    }
-+
-+    function refresh() {
-+        if (!statusProcess.running && !actionProcess.running)
-+            statusProcess.running = true
-+    }
-+
-+    Component.onCompleted: refresh()
-+
-+    Timer {
-+        interval: 5000
-+        running: true
-+        repeat: true
-+        onTriggered: root.refresh()
-+    }
-+
-+    Process {
-+        id: statusProcess
-+        command: [root.script, "status"]
-+        onExited: (exitCode, exitStatus) => root.toggled = exitCode === 0
-+    }
-+
-+    Process {
-+        id: actionProcess
-+        onExited: (exitCode, exitStatus) => {
-+            root.refresh()
-+            if (exitCode !== 0)
-+                Quickshell.execDetached(["notify-send", Translation.tr("Hotspot"), Translation.tr("Could not change hotspot. Check authentication and create_ap.")])
-+        }
-+    }
-+}
-diff --git a/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml b/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
---- a/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
-+++ b/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
-@@ -32 +32 @@
--    readonly property list<string> availableToggleTypes: ["network", "bluetooth", "idleInhibitor", "easyEffects", "nightLight", "darkMode", "cloudflareWarp", "gameMode", "screenSnip", "colorPicker", "onScreenKeyboard", "mic", "audio", "notifications", "powerProfile","musicRecognition", "antiFlashbang"]
-+    readonly property list<string> availableToggleTypes: ["network", "bluetooth", "idleInhibitor", "easyEffects", "nightLight", "darkMode", "cloudflareWarp", "hotspot", "gameMode", "screenSnip", "colorPicker", "onScreenKeyboard", "mic", "audio", "notifications", "powerProfile","musicRecognition", "antiFlashbang"]
-diff --git a/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidHotspotToggle.qml b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidHotspotToggle.qml
---- /dev/null
-+++ b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidHotspotToggle.qml
-@@ -0,0 +1,5 @@
-+import qs.modules.common.models.quickToggles
-+
-+AndroidQuickToggleButton {
-+    toggleModel: HotspotToggle {}
-+}
-diff --git a/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml
---- a/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml
-+++ b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml
-@@ -150,0 +151,13 @@
-+    DelegateChoice { roleValue: "hotspot"; AndroidHotspotToggle {
-+        required property int index
-+        required property var modelData
-+        buttonIndex: root.startingIndex + index
-+        buttonData: modelData
-+        editMode: root.editMode
-+        expandedSize: modelData.size > 1
-+        baseCellWidth: root.baseCellWidth
-+        baseCellHeight: root.baseCellHeight
-+        cellSpacing: root.spacing
-+        cellSize: modelData.size
-+    } }
-

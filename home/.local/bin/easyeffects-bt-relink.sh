@@ -69,6 +69,9 @@ FAST_CAP=15         # never stay fast for longer than this per episode
 WEDGE_GRACE=15      # chain gone + audio playing for this long -> restart
 RESTART_MIN_INTERVAL=180
 MIC_CHECK_INTERVAL=15
+PRESET_CHECK_INTERVAL=30   # seconds between preset checks when the desired preset is unchanged
+last_preset_desired=""
+next_preset_check=0
 
 RESTART_LOCK_FILE="$ROUTING_RUNTIME_DIR/restart.lock"
 
@@ -135,6 +138,51 @@ ensure_laptop_mic() {
   fi
 }
 
+# Native device autoload selects each hardware preset. Game mode overrides
+# the speaker preset. Compare the loaded preset before changing effects.
+desired_output_preset() {
+  local sink="$1"
+  case "$sink" in
+    bluez_output.B8_17_43_44_75_A3.*) echo Headphones-Reference ;;
+    bluez_output.00_A4_1C_39_55_5B.*) echo Headphones-Flat ;;
+    "$SPEAKER_SINK")
+      if timeout 5 hyprctl getoption animations:enabled -j 2>/dev/null |
+           jq -e '.bool == false' >/dev/null 2>&1; then
+        echo Speakers-Game
+      else
+        echo Speakers-Night
+      fi
+      ;;
+    *) echo Speakers-Night ;;
+  esac
+}
+
+sync_output_preset() {
+  # Never run the easyeffects client unless the real service instance is up.
+  # With no primary instance the client becomes the primary itself: it
+  # builds a full DSP chain (thousands of graph events, streams flip to
+  # paused) and can take the D-Bus name before Hyprland's autostart does.
+  pgrep -f 'easyeffects --hide-window --service-mode' >/dev/null 2>&1 || return 0
+
+  local desired loaded
+  desired=$(desired_output_preset "$1")
+  # Spawn the client once per preset change, otherwise at most every
+  # PRESET_CHECK_INTERVAL seconds, not on every converge tick.
+  if [[ "$desired" == "$last_preset_desired" ]] && (( SECONDS < next_preset_check )); then
+    return 0
+  fi
+  last_preset_desired=$desired
+  next_preset_check=$((SECONDS + PRESET_CHECK_INTERVAL))
+
+  loaded=$(QT_QPA_PLATFORM=offscreen timeout 5 easyeffects --last-loaded-preset output 2>/dev/null)
+  [[ "$loaded" == "$desired" ]] && return 0
+  if QT_QPA_PLATFORM=offscreen timeout 8 easyeffects --load-preset "$desired" >/dev/null 2>&1; then
+    log "loaded output preset $desired"
+  else
+    log "WARNING: could not load output preset $desired"
+  fi
+}
+
 # Make the real graph match the intent, once. Returns 0 when it already
 # does (or was just made to), 1 when it could not be satisfied right now
 # (chain down, or the target sink is not there yet) -- the caller uses
@@ -142,6 +190,16 @@ ensure_laptop_mic() {
 converge() {
   local desired cur count state now
   desired=$(desired_sink_name)
+  # EasyEffects requires a hardware system default to track output changes.
+  # Keep the configured default aligned with the selected route before
+  # checking its links. Do not write metadata when it already matches.
+  local configured
+  configured=$(timeout 5 pactl get-default-sink 2>/dev/null)
+  if [[ -n "$desired" && "$configured" != "$desired" ]]; then
+    timeout 5 pactl set-default-sink "$desired" 2>/dev/null &&
+      log "system default output changed from '$configured' to '$desired'"
+  fi
+  sync_output_preset "$desired"
   read -r cur count < <(ee_output_state)
   write_current_route
 

@@ -5,7 +5,7 @@ title-text: ""
 desktop-image: "background.jpg"
 desktop-image-scale-method: "stretch"
 desktop-color: "#05070c"
-terminal-font: "Sonder Item 20"
+terminal-font: "Sonder Menu Bold 34"
 terminal-left: "0"
 terminal-top: "0"
 terminal-width: "100%"
@@ -16,10 +16,10 @@ terminal-border: "0"
 + label {
   left = 140
   top = 29%
-  width = 760
+  width = 1040
   align = "left"
   text = "Select a system"
-  font = "Sonder Tag 13"
+  font = "Sonder Labels Regular 20"
   color = "#7F849C"
 }
 
@@ -27,18 +27,18 @@ terminal-border: "0"
 + boot_menu {
   left = 140
   top = 34%
-  width = 760
-  height = 30%
-  item_font = "Sonder Item 20"
-  selected_item_font = "Sonder ItemSel 27"
+  width = 1040
+  height = 52%
+  item_font = "Sonder Menu Bold 34"
+  selected_item_font = "Sonder Selected Bold 42"
   item_color = "#9399B2"
   selected_item_color = "#74C7EC"
   icon_width = 0
   icon_height = 0
   item_icon_space = 0
-  item_height = 46
+  item_height = 64
   item_padding = 0
-  item_spacing = 10
+  item_spacing = 12
 }
 
 # Small identity tag, bottom-left corner
@@ -48,7 +48,7 @@ terminal-border: "0"
   width = 400
   align = "left"
   text = "sonder"
-  font = "Sonder Tag 13"
+  font = "Sonder Labels Regular 20"
   color = "#585B70"
 }
 
@@ -60,6 +60,6 @@ terminal-border: "0"
   align = "right"
   id = "__timeout__"
   text = "Booting in %d seconds"
-  font = "Sonder Timeout 13"
+  font = "Sonder Countdown Regular 20"
   color = "#7F849C"
 }

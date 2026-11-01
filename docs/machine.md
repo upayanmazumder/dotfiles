@@ -6,7 +6,7 @@ Sonder runs CachyOS with Hyprland. The login shell is fish. SDDM starts the acti
 
 - This repository owns all managed links under `~/Scripts/bin`.
 - `~/dev/upayanmazumder/dots-hyprland` is a fork of the upstream desktop base. Its upstream remote points to `end-4/dots-hyprland`.
-- The live GRUB and SDDM themes exist, but their assets are not in this repository.
+- The live GRUB theme is the third-party `astronaut` theme. The live SDDM theme is the third-party `pixel-night-city` theme. Neither is in this repository. The tracked `sonder` GRUB theme and the Silent `sonder.conf` profile are my own and are currently unused.
 - A leftover `99-amdgpu-overdrive.conf` in the initramfs kept `ppfeaturemask` at `0xfff7ffff` after the drop-in was removed from `/etc`. Rebuild with `mkinitcpio -P` after changing modprobe drop-ins. With only `99-amdgpu-no-overdrive.conf` present, the driver reports `0xfff7bfff`.
 
 Some live applications keep independent settings outside this curated mirror. Examples include Neovim, Atuin, GTK themes, and browser profiles. Review each file for secrets and generated state before adding it. Not every file under `~/.config` is safe to publish.

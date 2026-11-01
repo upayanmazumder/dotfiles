@@ -24,6 +24,8 @@ The hotspot script reads two lines from `~/.config/hotspot/credentials`: SSID, t
 
 Install end-4 from its upstream project and use its chosen revision as the base. Its `hyprland.lua` loads `hyprland/*` and then `custom/*`, so `custom/` is the stable user extension point. Quickshell runs as `qs -c ii` in the current session. Rebase local Quickshell changes onto the upstream version before deploying. Keep the patch and any required owned modules synchronized.
 
+Two patches record in-place edits to upstream files. `patches/quickshell-ii-local.patch` covers `~/.config/quickshell/ii/`. `patches/hyprland-local.patch` covers `~/.config/hypr/hyprland/general.lua`. Both apply with `patch -p1` against upstream commit `301185c7`. Regenerate them after each change to a tracked upstream file. Matugen overwrites `hypr/hyprland/colors.lua`, `hypr/hyprlock/colors.conf`, `fuzzel/fuzzel_theme.ini`, and the GTK and Zed theme outputs. Do not track those files.
+
 ## Special state
 
 Fish universal variables are machine state, not files to publish. The local setting `MISE_FISH_AUTO_ACTIVATE=0` prevents the vendor hook from changing PATH. Set it on a new installation with `set -U MISE_FISH_AUTO_ACTIVATE 0`. Keep personal wallpaper assets outside Git unless redistribution rights are clear.
@@ -32,4 +34,4 @@ The tracked Hyprlock configuration uses a solid background. The private photogra
 
 Hyprlock media helpers use `playerctl`, ImageMagick (`magick`), and `curl`. End-4 may supply them. Verify them before enabling the helpers.
 
-The system mirror does not contain the active Sonder GRUB theme, SDDM theme assets, or SKLauncher JAR. Review these dependencies before installing the related files on another machine. The conflicting GPU drop-in is archived. The new driver mask applies after a reload or reboot, not to the running driver.
+The system mirror does not contain the third-party GRUB theme `astronaut`, the SDDM theme `pixel-night-city`, or the SKLauncher JAR. Review these dependencies before installing the related files on another machine. The conflicting GPU drop-in is archived. The new driver mask applies after a reload or reboot, not to the running driver.

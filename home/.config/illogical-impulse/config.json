@@ -145,8 +145,8 @@
         "showOnlyWhenLocked": false,
         "style": "cookie",
         "styleLocked": "cookie",
-        "x": 264.203125,
-        "y": 191.9453125
+        "x": 213.7265625,
+        "y": 182.38671875
       },
       "visualizer": {
         "enable": false,
@@ -318,7 +318,7 @@
       "unlockKeyring": true
     },
     "showLockedText": true,
-    "useHyprlock": true
+    "useHyprlock": false
   },
   "media": {
     "filterDuplicatePlayers": true
@@ -518,6 +518,7 @@
   },
   "sounds": {
     "battery": true,
+    "notifications": false,
     "pomodoro": true,
     "theme": "freedesktop"
   },

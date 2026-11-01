@@ -14,4 +14,3 @@ UUID=4ee3417c-1618-45ac-9e95-463c34adf9e8 /var/cache     btrfs   subvol=/@cache,
 UUID=4ee3417c-1618-45ac-9e95-463c34adf9e8 /var/tmp       btrfs   subvol=/@tmp,defaults,noatime,compress=zstd:1 0 0
 UUID=4ee3417c-1618-45ac-9e95-463c34adf9e8 /var/log       btrfs   subvol=/@log,defaults,noatime,compress=zstd:1 0 0
 tmpfs                                     /tmp           tmpfs   defaults,noatime,mode=1777 0 0
-UUID=1B5EABC927CF9CAA /mnt/shared ntfs3 defaults,uid=1000,gid=1000,nofail,windows_names,iocharset=utf8 0 0

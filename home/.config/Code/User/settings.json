@@ -77,10 +77,10 @@
   "editor.wordWrap": "on",
   "security.workspace.trust.untrustedFiles": "open",
   "files.associations": {
-    ".env*": "dotenv"
+    ".env*": "dotenv",
   },
   "editor.tokenColorCustomizations": {
-    "textMateRules": []
+    "textMateRules": [],
   },
   "githubPullRequests.pushBranch": "always",
   "redhat.telemetry.enabled": true,
@@ -91,5 +91,5 @@
   },
   "jdk.telemetry.enabled": false,
   "makefile.configureOnOpen": true,
-  "workbench.colorTheme": "Night Owl",
+  "workbench.colorTheme": "Catpuccin Mocha Transparent",
 }

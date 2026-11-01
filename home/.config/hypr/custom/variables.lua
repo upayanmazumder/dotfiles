@@ -38,7 +38,7 @@ browser = "/usr/bin/thorium-browser-avx2" -- 2026-10-07: was pointing at the raw
                               -- --enable-features=TouchpadOverscrollHistoryNavigation
                               -- for 2-finger swipe navigation never applied).
 -- Dolphin uses the same desktop entry for SUPER+E and Quickshell.
--- The entry selects its dark Qt palette and Kvantum theme.
+-- The entry selects KDE's color palette and opaque Breeze style for Dolphin.
 -- The other upstream chains keep their first installed candidate.
 --
 -- workspaceGroupSize is left at upstream's 10.
