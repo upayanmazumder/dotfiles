@@ -41,6 +41,12 @@ add:
   real AUR package, but `paru -S illogical-impulse-*` will fail with
   "target not found" -- confirmed breaking Sonder's bootstrap once
   (2026-08-03), do not repeat that mistake.
+- System plumbing the installer or a package dependency already pulls:
+  `sudo`, `haveged`, `logrotate`, `lsb-release`, `inetutils`,
+  `debuginfod`, `bpftune-git`, `chwd`, `cryptsetup`, `device-mapper`,
+  `lvm2`, `mdadm`, `efitools`, `libisoburn`, `sg3_utils`, `sysfsutils`,
+  `turbostat`, `usb_modeswitch`, `conntrack-tools`, `modemmanager`,
+  `netctl`, `nfs-utils`, `ntfsprogs`, `xl2tpd`.
 
 If genuinely unsure whether something is OS-scope vs a real addition,
 check `pacman -Qi <pkg>` for `Installed From` and reason about whether a

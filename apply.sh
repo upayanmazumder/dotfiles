@@ -52,6 +52,23 @@ apply_configs() {
     fi
     log "  $rel"
   done
+
+  log "linking home/ symlinks into \$HOME (existing paths are skipped)"
+  find "$SCRIPT_DIR/home" -type l | while IFS= read -r src; do
+    rel="${src#"$SCRIPT_DIR"/home/}"
+    dest="$HOME/$rel"
+    target="$(readlink "$src")"
+    if [ -L "$dest" ] && [ "$(readlink "$dest")" = "$target" ]; then
+      continue
+    fi
+    if [ -e "$dest" ] || [ -L "$dest" ]; then
+      log "  skipped changed $rel (existing path)"
+      continue
+    fi
+    mkdir -p "$(dirname "$dest")"
+    ln -s "$target" "$dest"
+    log "  $rel -> $target"
+  done
 }
 
 replace_home() {

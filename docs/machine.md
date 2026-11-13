@@ -58,4 +58,8 @@ The fish prompt is Tide, which loads from the fish functions directory. Install 
 
 `home/.config/zed/settings.json`, `home/.config/rclone/rclone.conf`, and the rclone sync scripts are tracked. The Zed copy has an empty Context7 key and a placeholder Ollama URL. The rclone copy keeps only the remote name and type, with no client secret or token. Set the real values in the live files. Never copy a live Zed or rclone file into the checkout.
 
-`home/.config/Code/extensions.txt` and `home/.config/dconf/user.dump` stay tracked as reinstall references. The live machine no longer has either file.
+`home/.config/Code/extensions.txt` stays tracked as a reinstall reference. The live machine no longer has the file. `dconf/user.dump` was generated state, so it is out of the repository.
+
+`home/.omp/AGENTS.md` and `home/.claude/rules/asd-ste100.md` are tracked symlinks into `home/.agents/`. `apply.sh --configs` creates them after the file copy pass.
+
+The locale is `en_GB`, and upstream ships no `en_GB` translation file. The two readers log a warning until `en_GB.json` exists. Copy `en_US.json` to `en_GB.json` in `~/.config/quickshell/ii/translations/` and in `~/.config/illogical-impulse/translations/` to stop the warning after an upstream update.

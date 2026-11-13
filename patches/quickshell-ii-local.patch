@@ -114,6 +114,32 @@ index 0000000..9902fee
 +        }
 +    }
 +}
+diff --git a/modules/common/widgets/ToolbarTabBar.qml b/modules/common/widgets/ToolbarTabBar.qml
+index 708b30b..76d2c47 100644
+--- a/modules/common/widgets/ToolbarTabBar.qml
++++ b/modules/common/widgets/ToolbarTabBar.qml
+@@ -56,18 +56,18 @@ Item {
+         implicitHeight: contentItem.children[root.currentIndex]?.implicitHeight ?? 0
+         radius: height / 2
+         // Animation
+-        property Item targetItem: contentItem.children[root.currentIndex]
++        property Item targetItem: contentItem.children[root.currentIndex] ?? null
+         AnimatedTabIndexPair {
+             id: leftBound
+             idx1Duration: 50
+             idx2Duration: 200
+-            index: activeIndicator.targetItem.x
++            index: activeIndicator.targetItem?.x ?? 0
+         }
+         AnimatedTabIndexPair {
+             id: rightBound
+             idx1Duration: 50
+             idx2Duration: 200
+-            index: activeIndicator.targetItem.x + activeIndicator.targetItem.width
++            index: (activeIndicator.targetItem?.x ?? 0) + (activeIndicator.targetItem?.width ?? 0)
+         }
+         x: Math.min(leftBound.idx1, leftBound.idx2)
+         width: Math.max(rightBound.idx1, rightBound.idx2) - x
 diff --git a/modules/ii/background/Background.qml b/modules/ii/background/Background.qml
 index 7841fe1..5572b70 100644
 --- a/modules/ii/background/Background.qml
@@ -216,10 +242,18 @@ index 0000000..aa1f30f
 +    }
 +}
 diff --git a/modules/ii/bar/BarContent.qml b/modules/ii/bar/BarContent.qml
-index 3bec758..323b044 100644
+index 3bec758..183d0e1 100644
 --- a/modules/ii/bar/BarContent.qml
 +++ b/modules/ii/bar/BarContent.qml
-@@ -317,6 +317,23 @@ Item { // Bar content region
+@@ -131,7 +131,6 @@ Item { // Bar content region
+         BarGroup {
+             id: middleCenterGroup
+             anchors.verticalCenter: parent.verticalCenter
+-            padding: workspacesWidget.widgetPadding
+ 
+             Workspaces {
+                 id: workspacesWidget
+@@ -317,6 +316,23 @@ Item { // Bar content region
                  }
              }
  
@@ -477,18 +511,36 @@ index f8b1e24..224ecb1 100644
                      }
                      onMovedAway: {
 diff --git a/modules/ii/sidebarRight/QuickSliders.qml b/modules/ii/sidebarRight/QuickSliders.qml
-index 0153505..e8c99d1 100644
+index 0153505..3865f15 100644
 --- a/modules/ii/sidebarRight/QuickSliders.qml
 +++ b/modules/ii/sidebarRight/QuickSliders.qml
-@@ -72,9 +72,11 @@ Rectangle {
+@@ -72,9 +72,13 @@ Rectangle {
              active: Config.options.sidebar.quickSliders.showVolume
              sourceComponent: QuickSlider {
                  materialSymbol: "volume_up"
+-                value: Audio.sink.audio.volume
 +                to: Audio.maxVolume
-                 value: Audio.sink.audio.volume
++                value: Audio.sink?.audio?.volume ?? 0
                  onMoved: {
-                     Audio.sink.audio.volume = value
-+                    Audio.pushRealVolume(value)
+-                    Audio.sink.audio.volume = value
++                    if (Audio.sink?.audio) {
++                        Audio.sink.audio.volume = value
++                        Audio.pushRealVolume(value)
++                    }
+                 }
+             }
+         }
+@@ -88,9 +92,11 @@ Rectangle {
+             active: Config.options.sidebar.quickSliders.showMic
+             sourceComponent: QuickSlider {
+                 materialSymbol: "mic"
+-                value: Audio.source.audio.volume
++                value: Audio.source?.audio?.volume ?? 0
+                 onMoved: {
+-                    Audio.source.audio.volume = value
++                    if (Audio.source?.audio) {
++                        Audio.source.audio.volume = value
++                    }
                  }
              }
          }

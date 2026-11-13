@@ -35,8 +35,16 @@ while IFS= read -r -d '' path; do
       [ "$mode" != "--pull" ] || exit 1
       continue ;;
   esac
-  [ -f "$tracked" ] && [ ! -L "$tracked" ] || continue
   live="$HOME/$rel"
+  if [ -L "$tracked" ]; then
+    if [ -L "$live" ] && cmp -s "$tracked" "$live"; then
+      continue
+    fi
+    printf 'symlink %s (repo and live link targets differ)\n' "$rel"
+    [ "$mode" != "--pull" ] || exit 1
+    continue
+  fi
+  [ -f "$tracked" ] && [ ! -L "$tracked" ] || continue
   if [ ! -f "$live" ] || [ -L "$live" ]; then
     printf '\033[1;33mgone\033[0m  %s (missing or symlinked live file; unchanged in repo)\n' "$rel"
     [ "$mode" != "--pull" ] || exit 1

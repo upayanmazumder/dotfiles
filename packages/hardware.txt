@@ -20,3 +20,4 @@ power-profiles-daemon
 cpupower
 ethtool
 hdparm
+nbfc-linux
