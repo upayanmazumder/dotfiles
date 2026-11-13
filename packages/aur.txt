@@ -47,6 +47,7 @@ ttf-material-symbols-variable-git
 ttf-readex-pro
 ttf-rubik-vf
 ttf-twemoji
+vesktop-bin
 visual-studio-code-bin
 zapzap
 zoom

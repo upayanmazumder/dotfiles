@@ -1,5 +1,5 @@
 # Local modifications to the dots-hyprland 'ii' Quickshell config.
-# Baseline: upstream commit 301185c7 (~/dev/upayanmazumder/dots-hyprland, branch main)
+# Baseline: upstream main commit cb1c428b (~/dev/upayanmazumder/dots-hyprland)
 # Covers tracked Quickshell overlays, including the screenshare toggle.
 # Regenerate: see docs/config-management.md 'End-4 base'
 # Apply after a dots update:  cd ~/.config/quickshell/ii && patch -p1 < .../quickshell-ii-local.patch
@@ -18,7 +18,7 @@ index bedf01e..b5e3e9f 100644
      }
  
 diff --git a/modules/common/Config.qml b/modules/common/Config.qml
-index ee068bd..bb87d18 100644
+index 5fcd1bb..09f54eb 100644
 --- a/modules/common/Config.qml
 +++ b/modules/common/Config.qml
 @@ -203,6 +203,12 @@ Singleton {
@@ -352,7 +352,7 @@ index da8a690..c949d69 100644
      icon: Audio.sink?.audio.muted ? "volume_off" : "volume_up"
      name: Translation.tr("Volume")
 diff --git a/modules/ii/overview/Overview.qml b/modules/ii/overview/Overview.qml
-index b28ff5a..7405eb3 100644
+index 1d2f5e5..6b33bb7 100644
 --- a/modules/ii/overview/Overview.qml
 +++ b/modules/ii/overview/Overview.qml
 @@ -14,6 +14,7 @@ import Quickshell.Hyprland
@@ -363,19 +363,15 @@ index b28ff5a..7405eb3 100644
  
      PanelWindow {
          id: panelWindow
-@@ -94,10 +95,10 @@ Scope {
+@@ -94,7 +95,7 @@ Scope {
              Loader {
                  id: overviewLoader
                  anchors.horizontalCenter: parent.horizontalCenter
 -                active: GlobalStates.overviewOpen && (Config?.options.overview.enable ?? true)
 +                active: GlobalStates.overviewOpen && overviewScope.showWorkspaces && (Config?.options.overview.enable ?? true)
+                 visible: (panelWindow.searchingText == "")
                  sourceComponent: OverviewWidget {
                      screen: panelWindow.screen
--                    visible: (panelWindow.searchingText == "")
-+                    visible: overviewScope.showWorkspaces && (panelWindow.searchingText == "")
-                 }
-             }
-         }
 @@ -127,10 +128,20 @@ Scope {
          target: "search"
  

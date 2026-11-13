@@ -566,7 +566,6 @@ Singleton {
             property JsonObject sounds: JsonObject {
                 property bool battery: false
                 property bool pomodoro: false
-                property bool notifications: false
                 property string theme: "freedesktop"
             }
 

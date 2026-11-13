@@ -519,7 +519,6 @@
   },
   "sounds": {
     "battery": true,
-    "notifications": false,
     "pomodoro": true,
     "theme": "freedesktop"
   },

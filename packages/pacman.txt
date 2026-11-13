@@ -173,8 +173,10 @@ python-sphinx
 qalculate-gtk
 qbittorrent
 qpwgraph
+quickshell
 radeontop
 rclone
+realtime-privileges
 restic
 rpi-imager
 rustup
@@ -215,7 +217,9 @@ vim
 vlc
 vlc-plugins-all
 vulkan-tools
+wayvnc
 which
+wl-clipboard
 xdg-utils
 xfsprogs
 xh

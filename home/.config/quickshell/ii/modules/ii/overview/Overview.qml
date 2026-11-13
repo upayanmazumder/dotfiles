@@ -96,9 +96,9 @@ Scope {
                 id: overviewLoader
                 anchors.horizontalCenter: parent.horizontalCenter
                 active: GlobalStates.overviewOpen && overviewScope.showWorkspaces && (Config?.options.overview.enable ?? true)
+                visible: (panelWindow.searchingText == "")
                 sourceComponent: OverviewWidget {
                     screen: panelWindow.screen
-                    visible: overviewScope.showWorkspaces && (panelWindow.searchingText == "")
                 }
             }
         }

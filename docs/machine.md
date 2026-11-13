@@ -5,7 +5,8 @@ Sonder runs CachyOS with Hyprland. The login shell is fish. SDDM starts the acti
 ## Active sources
 
 - This repository owns all managed links under `~/Scripts/bin`.
-- `~/dev/upayanmazumder/dots-hyprland` is a fork of the upstream desktop base. Its upstream remote points to `end-4/dots-hyprland`.
+- `~/dev/upayanmazumder/dots-hyprland` is a fork of the upstream desktop base. Its upstream remote points to `end-4/dots-hyprland`. The deployed base is upstream main commit `cb1c428b` (2026-11-08). The old `feat/notification-sound` branch is dropped, so the `sounds.notifications` option no longer exists.
+- The tracked Konsole session layout is `~/.local/share/kxmlgui5/konsole/sessionui.rc`, which sets Ctrl+C for copy.
 - The live GRUB theme is the third-party `astronaut` theme. The live SDDM theme is the third-party `pixel-night-city` theme. Neither is in this repository. The tracked `sonder` GRUB theme and the Silent `sonder.conf` profile are my own and are currently unused.
 - A leftover `99-amdgpu-overdrive.conf` in the initramfs kept `ppfeaturemask` at `0xfff7ffff` after the drop-in was removed from `/etc`. Rebuild with `mkinitcpio -P` after changing modprobe drop-ins. With only `99-amdgpu-no-overdrive.conf` present, the driver reports `0xfff7bfff`.
 - The speaker volume range is 0 to 153%, which is the pavucontrol maximum. 153% is +11.08 dB of gain after EasyEffects. The `Speakers-Night` and `Speakers-Game` limiters have `gain-boost` off and a -12 dBFS ceiling. `Speakers-Night` uses a -16 LUFS autogain target and a 60 ms limiter release, so a full-scale peak lands near -0.9 dBFS at 153%. With `gain-boost` on, the limiter ceiling stays at 0 dBFS for any threshold, and gain above 100% clips. `ee-volume.sh` caps every other sink at 100%, because the Bluetooth and DAC presets keep a 0 dBFS ceiling. To change the maximum, change `MAX_SPEAKER_PCT` in `ee-volume.sh`, `Audio.maxVolume` in `Audio.qml`, and the limiter threshold in both speaker presets.
@@ -53,7 +54,7 @@ The system default sink stays on the hardware output, and EasyEffects keeps its 
 
 ## Prompt and tracked copies
 
-The fish prompt is Tide, which loads from the fish functions directory. The `oh-my-posh` themes stay tracked for reuse, but no file loads them.
+The fish prompt is Tide, which loads from the fish functions directory. Install it with `fisher install IlanCosman/tide` on a new machine. The `oh-my-posh` themes stay tracked for reuse, but no file loads them.
 
 `home/.config/zed/settings.json`, `home/.config/rclone/rclone.conf`, and the rclone sync scripts are tracked. The Zed copy has an empty Context7 key and a placeholder Ollama URL. The rclone copy keeps only the remote name and type, with no client secret or token. Set the real values in the live files. Never copy a live Zed or rclone file into the checkout.
 
