@@ -339,6 +339,19 @@ index 4eb709c..de3335f 100644
      // Main toolbar: password box
      Toolbar {
          id: mainIsland
+diff --git a/modules/ii/notificationPopup/NotificationPopup.qml b/modules/ii/notificationPopup/NotificationPopup.qml
+index 669e397..8d48b5e 100644
+--- a/modules/ii/notificationPopup/NotificationPopup.qml
++++ b/modules/ii/notificationPopup/NotificationPopup.qml
+@@ -14,7 +14,7 @@ Scope {
+     PanelWindow {
+         id: root
+         visible: (Notifications.popupList.length > 0) && !GlobalStates.screenLocked
+-        screen: Quickshell.screens.find(s => Config.options.notifications.forceMonitor.enable ? s.name === Config.options.notifications.forceMonitor.name : s.name === Hyprland.focusedMonitor?.name) ?? null
++        screen: Quickshell.screens.find(s => Config.options.notifications.monitor.enable ? s.name === Config.options.notifications.monitor.name : s.name === Hyprland.focusedMonitor?.name) ?? null
+ 
+         WlrLayershell.namespace: "quickshell:notificationPopup"
+         WlrLayershell.layer: WlrLayer.Overlay
 diff --git a/modules/ii/onScreenDisplay/indicators/VolumeIndicator.qml b/modules/ii/onScreenDisplay/indicators/VolumeIndicator.qml
 index da8a690..c949d69 100644
 --- a/modules/ii/onScreenDisplay/indicators/VolumeIndicator.qml
@@ -527,6 +540,40 @@ index 0106249..7c6e1f5 100644
      DelegateChoice { roleValue: "mic"; AndroidMicToggle {
          required property int index
          required property var modelData
+diff --git a/modules/settings/InterfaceConfig.qml b/modules/settings/InterfaceConfig.qml
+index de544ed..5420c8f 100644
+--- a/modules/settings/InterfaceConfig.qml
++++ b/modules/settings/InterfaceConfig.qml
+@@ -269,9 +269,9 @@ ContentPage {
+         ConfigSwitch {
+             buttonIcon: "monitor"
+             text: Translation.tr("Force specific monitor")
+-            checked: Config.options.notifications.forceMonitor.enable
++            checked: Config.options.notifications.monitor.enable
+             onCheckedChanged: {
+-                Config.options.notifications.forceMonitor.enable = checked;
++                Config.options.notifications.monitor.enable = checked;
+             }
+             StyledToolTip {
+                 text: Translation.tr("If you have multiple monitors and want notifications to only show on one of them, enable this and enter the monitor name below (e.g., eDP-1)")
+@@ -279,14 +279,14 @@ ContentPage {
+         }
+ 
+         ConfigRow {
+-            enabled: Config.options.notifications.forceMonitor.enable
++            enabled: Config.options.notifications.monitor.enable
+             MaterialTextArea {
+                 Layout.fillWidth: true
+                 placeholderText: Translation.tr("Monitor name to show notifications on (e.g., eDP-1)")
+-                text: Config.options.notifications.forceMonitor.name
++                text: Config.options.notifications.monitor.name
+                 wrapMode: TextEdit.Wrap
+                 onTextChanged: {
+-                    Config.options.notifications.forceMonitor.name = text;
++                    Config.options.notifications.monitor.name = text;
+                 }
+             }
+         }
 diff --git a/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml b/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml
 index e42f735..e57b810 100644
 --- a/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml
