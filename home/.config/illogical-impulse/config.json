@@ -91,7 +91,7 @@
   "audio": {
     "protection": {
       "enable": false,
-      "maxAllowed": 99,
+      "maxAllowed": 154,
       "maxAllowedIncrease": 10
     }
   },
@@ -106,7 +106,7 @@
       "workspaceZoom": 1.07
     },
     "thumbnailPath": "",
-    "wallpaperPath": "/home/upayan/Pictures/Wallpapers/wallhaven-42wlkx.jpg",
+    "wallpaperPath": "/home/upayan/Pictures/Wallpapers/basement.jpg",
     "widgets": {
       "clock": {
         "cookie": {
@@ -136,8 +136,8 @@
           "showDate": true,
           "vertical": false
         },
-        "enable": true,
-        "placementStrategy": "free",
+        "enable": false,
+        "placementStrategy": "mostBusy",
         "quote": {
           "enable": false,
           "text": "for her"
@@ -145,8 +145,8 @@
         "showOnlyWhenLocked": false,
         "style": "cookie",
         "styleLocked": "cookie",
-        "x": 213.7265625,
-        "y": 182.38671875
+        "x": 995,
+        "y": 505
       },
       "visualizer": {
         "enable": false,
@@ -155,10 +155,10 @@
         "y": 499.640625
       },
       "weather": {
-        "enable": true,
-        "placementStrategy": "free",
-        "x": 1413.1835937499998,
-        "y": 161.54296875
+        "enable": false,
+        "placementStrategy": "leastBusy",
+        "x": 1440.4648437499998,
+        "y": 178.1328125
       }
     }
   },
@@ -202,6 +202,7 @@
       "showMicToggle": false,
       "showPerformanceProfileToggle": true,
       "showScreenRecord": true,
+      "showScreenShare": true,
       "showScreenSnip": true
     },
     "verbose": true,

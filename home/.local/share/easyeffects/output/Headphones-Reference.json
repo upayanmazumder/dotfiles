@@ -1,22 +1,15 @@
 {
     "output": {
         "blocklist": [],
-        "crossfeed#0": {
-            "bypass": false,
-            "fcut": 700,
-            "feed": 4.5,
-            "input-gain": 0.0,
-            "output-gain": 0.0
-        },
         "equalizer#0": {
             "balance": 0.0,
             "bypass": false,
             "decramp": "Off",
-            "input-gain": 0.0,
+            "input-gain": -3.0,
             "left": {
                 "band0": {
                     "frequency": 105,
-                    "gain": 4.0,
+                    "gain": -3.0,
                     "mode": "APO (DR)",
                     "mute": false,
                     "q": 0.7,
@@ -38,7 +31,7 @@
                 },
                 "band2": {
                     "frequency": 3000,
-                    "gain": 2.0,
+                    "gain": 1.5,
                     "mode": "APO (DR)",
                     "mute": false,
                     "q": 1.2,
@@ -49,7 +42,7 @@
                 },
                 "band3": {
                     "frequency": 6500,
-                    "gain": -3.0,
+                    "gain": -1.5,
                     "mode": "APO (DR)",
                     "mute": false,
                     "q": 1.4,
@@ -60,7 +53,7 @@
                 },
                 "band4": {
                     "frequency": 10000,
-                    "gain": 1.5,
+                    "gain": 0.0,
                     "mode": "APO (DR)",
                     "mute": false,
                     "q": 0.7,
@@ -78,7 +71,7 @@
             "right": {
                 "band0": {
                     "frequency": 105,
-                    "gain": 4.0,
+                    "gain": -3.0,
                     "mode": "APO (DR)",
                     "mute": false,
                     "q": 0.7,
@@ -100,7 +93,7 @@
                 },
                 "band2": {
                     "frequency": 3000,
-                    "gain": 2.0,
+                    "gain": 1.5,
                     "mode": "APO (DR)",
                     "mute": false,
                     "q": 1.2,
@@ -111,7 +104,7 @@
                 },
                 "band3": {
                     "frequency": 6500,
-                    "gain": -3.0,
+                    "gain": -1.5,
                     "mode": "APO (DR)",
                     "mute": false,
                     "q": 1.4,
@@ -122,7 +115,7 @@
                 },
                 "band4": {
                     "frequency": 10000,
-                    "gain": 1.5,
+                    "gain": 0.0,
                     "mode": "APO (DR)",
                     "mute": false,
                     "q": 0.7,
@@ -146,7 +139,7 @@
             "attack": 3.0,
             "bypass": false,
             "dithering": "None",
-            "gain-boost": true,
+            "gain-boost": false,
             "input-gain": 0.0,
             "input-to-link": -80.01,
             "input-to-sidechain": -80.01,
@@ -156,7 +149,7 @@
             "mode": "Herm Thin",
             "output-gain": 0.0,
             "oversampling": "None",
-            "release": 10.0,
+            "release": 50.0,
             "sidechain-preamp": 0.0,
             "sidechain-to-input": -80.01,
             "sidechain-to-link": -80.01,
@@ -164,22 +157,8 @@
             "stereo-link": 100.0,
             "threshold": -1.0
         },
-        "loudness#0": {
-            "bypass": false,
-            "clipping": false,
-            "clipping-range": 6.0,
-            "fft": "4096",
-            "iir-approximation": "Normal",
-            "input-gain": 0.0,
-            "mode": "FFT",
-            "output-gain": 0.0,
-            "std": "ISO226-2023",
-            "volume": -15.0
-        },
         "plugins_order": [
-            "crossfeed#0",
             "equalizer#0",
-            "loudness#0",
             "limiter#0",
             "level_meter#0"
         ]

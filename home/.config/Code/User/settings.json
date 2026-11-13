@@ -84,7 +84,7 @@
   },
   "githubPullRequests.pushBranch": "always",
   "redhat.telemetry.enabled": true,
-  "material-code.primaryColor": "#32353C",
+  "material-code.primaryColor": "#646481",
   "dotenv.enableAutocloaking": false,
   "vs-kubernetes": {
     "vs-kubernetes.crd-code-completion": "enabled",

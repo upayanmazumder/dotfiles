@@ -41,8 +41,10 @@ action="${1:-status}"
 apply_route() {
   local target
   target=$(desired_sink_name)
-  pactl set-default-sink "$target" || return 1
-  relink_ee_output "$target"
+  timeout 5 pactl set-default-sink "$target" || return 1
+  # An idle chain has no ports. Record intent and let the controller apply it.
+  relink_ee_output "$target" || true
+  write_current_route
   wake_converger
 }
 
@@ -69,7 +71,7 @@ case "$action" in
     apply_route
     ;;
   status)
-    cat "$ROUTE_FILE" 2>/dev/null || echo "none"
+    route_label_for_sink "$(desired_sink_name)"
     ;;
   *)
     echo "usage: audio-output-switch.sh {speaker|headphones|toggle|auto|status}" >&2

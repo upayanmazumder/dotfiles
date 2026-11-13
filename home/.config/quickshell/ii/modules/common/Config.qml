@@ -263,6 +263,7 @@ Singleton {
                     property bool showDarkModeToggle: true
                     property bool showPerformanceProfileToggle: false
                     property bool showScreenRecord: false
+                    property bool showScreenShare: true
                     property bool showAudioOutputToggle: true
                 }
                 property JsonObject workspaces: JsonObject {

@@ -40,3 +40,5 @@ image/png=thorium-browser-avx2.desktop
 image/webp=thorium-browser-avx2.desktop
 x-scheme-handler/google-chrome=thorium-browser-avx2.desktop
 x-scheme-handler/rpi-imager=com.raspberrypi.rpi-imager-uri-handler.desktop
+x-scheme-handler/discord-492484203435393035=discord-492484203435393035.desktop
+x-scheme-handler/discord=vesktop.desktop

@@ -52,7 +52,7 @@ write_log() {
       mv -f "$LOG_FILE" "$LOG_FILE.1"
       : > "$LOG_FILE"
     fi
-  } 9>>"$LOG_FILE"
+  } 9>>"$LOG_DIR/writer.lock"
 }
 
 write_log SYSTEM "audio-debug-watcher started (pid $$), logging to $LOG_FILE"
@@ -83,7 +83,7 @@ JRNL_PID=$!
 # --- 4. EasyEffects process lifecycle -----------------------------------------
 last_ee=""
 while true; do
-  cur=$(pgrep -f 'easyeffects --hide-window --service-mode' 2>/dev/null | head -1)
+  cur=$(pgrep -o -x easyeffects 2>/dev/null || true)
   if [[ "$cur" != "$last_ee" ]]; then
     if [[ -n "$last_ee" && -z "$cur" ]]; then
       write_log ee "EasyEffects STOPPED (was pid $last_ee)"

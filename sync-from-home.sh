@@ -28,7 +28,7 @@ while IFS= read -r -d '' path; do
   case "${rel,,}" in
     .gitconfig|.ssh/*|.config/git/*|.config/zed/settings.json|\
     .config/kdeconnect/*|.claude/settings.json|.codex/*|\
-    .config/hotspot/*|.config/rclone/*|.local/bin/rclone-sync-*|\
+    .config/hotspot/*|.config/rclone/*|\
     .local/share/keyrings/*|*secret*|*token*|*password*|\
     *credential*|*private*|*.key|*.pem)
       printf '\033[1;33mprivate\033[0m %s (never sync from live)\n' "$rel"

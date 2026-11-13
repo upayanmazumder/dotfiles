@@ -3,7 +3,6 @@
 home/.ssh/
 home/.config/git/allowed_signers
 home/.config/hotspot/
-home/.config/rclone/
 home/.local/share/keyrings/
 home/.config/kdeconnect/
 home/.config/Code/User/globalStorage/

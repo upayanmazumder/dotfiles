@@ -19,7 +19,7 @@ Install CachyOS and the end-4 desktop framework first. The framework supplies `~
 
 Edit a file in `home/` or `etc/` and test it on the machine. Both sync scripts show live differences without copying them. Use `--pull` with a mirror-relative path to import one file after reviewing it. `docs/machine.md` records machine-specific behavior.
 
-Keep private data outside Git. The hotspot reads its SSID and password from `~/.config/hotspot/credentials`, which must have mode `600`. Zed and other applications can also hold API keys in their live settings. Review every diff and scan the repository before publishing changes.
+Keep private data outside Git. The hotspot reads its SSID and password from `~/.config/hotspot/credentials`, which must have mode `600`. The tracked Zed settings and rclone config omit the Context7 key, the Ollama URL, and the Google Drive credentials. Review every diff and scan the repository before publishing changes.
 
 ## What is not tracked
 

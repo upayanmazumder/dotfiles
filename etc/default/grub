@@ -3,7 +3,7 @@
 GRUB_DEFAULT=0
 GRUB_TIMEOUT='5'
 GRUB_DISTRIBUTOR='CachyOS'
-GRUB_CMDLINE_LINUX_DEFAULT='nowatchdog nvme_load=YES splash loglevel=3'
+GRUB_CMDLINE_LINUX_DEFAULT='panic=10 hung_task_panic=1 log_buf_len=8M nvme_load=YES splash loglevel=3 resume=UUID=bc715af5-53ed-470a-8033-48b4cd1858bb'
 GRUB_CMDLINE_LINUX=""
 
 # Preload both GPT and MBR modules so that they are not missed
@@ -44,9 +44,6 @@ GRUB_DISABLE_RECOVERY='true'
 
 # Uncomment one of them for the gfx desired, a image background or a gfxtheme
 #GRUB_BACKGROUND="wallpaper"
-# The astronaut theme is a third-party GRUB theme. It is not in this repo.
-# Install it under /usr/share/grub/themes/astronaut first. The tracked
-# usr/share/grub/themes/sonder theme is my own and is currently unused.
 GRUB_THEME=/usr/share/grub/themes/astronaut/theme.txt
 GRUB_FONT=/usr/share/grub/themes/astronaut/JetBrainsMono_34.pf2
 

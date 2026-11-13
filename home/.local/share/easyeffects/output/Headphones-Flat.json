@@ -1,12 +1,43 @@
 {
     "output": {
         "blocklist": [],
-        "crossfeed#0": {
+        "equalizer#0": {
+            "balance": 0.0,
             "bypass": false,
-            "fcut": 700,
-            "feed": 3.0,
-            "input-gain": 0.0,
-            "output-gain": 0.0
+            "decramp": "Off",
+            "input-gain": -2.0,
+            "mode": "IIR",
+            "num-bands": 1,
+            "output-gain": 0.0,
+            "pitch-left": 0.0,
+            "pitch-right": 0.0,
+            "split-channels": false,
+            "left": {
+                "band0": {
+                    "frequency": 150.0,
+                    "gain": -2.0,
+                    "mode": "APO (DR)",
+                    "mute": false,
+                    "q": 0.7,
+                    "slope": "x1",
+                    "solo": false,
+                    "type": "Lo-shelf",
+                    "width": 4.0
+                }
+            },
+            "right": {
+                "band0": {
+                    "frequency": 150.0,
+                    "gain": -2.0,
+                    "mode": "APO (DR)",
+                    "mute": false,
+                    "q": 0.7,
+                    "slope": "x1",
+                    "solo": false,
+                    "type": "Lo-shelf",
+                    "width": 4.0
+                }
+            }
         },
         "level_meter#0": {
             "bypass": false
@@ -20,7 +51,7 @@
             "attack": 3.0,
             "bypass": false,
             "dithering": "None",
-            "gain-boost": true,
+            "gain-boost": false,
             "input-gain": 0.0,
             "input-to-link": -80.01,
             "input-to-sidechain": -80.01,
@@ -30,7 +61,7 @@
             "mode": "Herm Thin",
             "output-gain": 0.0,
             "oversampling": "None",
-            "release": 10.0,
+            "release": 50.0,
             "sidechain-preamp": 0.0,
             "sidechain-to-input": -80.01,
             "sidechain-to-link": -80.01,
@@ -39,7 +70,7 @@
             "threshold": -1.0
         },
         "plugins_order": [
-            "crossfeed#0",
+            "equalizer#0",
             "limiter#0",
             "level_meter#0"
         ]

@@ -17,9 +17,12 @@ autolearn:
   enabled: true
 modelRoles:
   plan: anthropic/claude-opus-5:medium
-  commit: anthropic/claude-haiku-4-5:high
-  tiny: anthropic/claude-haiku-4-5:off
+  commit: deepseek/deepseek-v4-flash:off
+  tiny: deepseek/deepseek-v4-flash:off
   vision: anthropic/claude-opus-5:high
+  default: 797th/deepseek-v4.1-flash:max
+  task: deepseek/deepseek-v4-flash
+  advisor: openai-codex/gpt-6.1-sol:high
 dev:
   autoqaConsent: granted
 security:

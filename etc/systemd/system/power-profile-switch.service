@@ -29,4 +29,7 @@ Type=oneshot
 ExecStart=/bin/sh -c 'if [ "$(cat /sys/class/power_supply/ADP1/online 2>/dev/null)" = "1" ]; then p=performance; else p=balanced; fi; exec /usr/bin/powerprofilesctl set "$p"'
 
 [Install]
-WantedBy=multi-user.target
+# multi-user.target creates a cycle: this unit is ordered After
+# power-profiles-daemon.service, which is itself After=multi-user.target.
+# Pull it in from graphical.target instead.
+WantedBy=graphical.target

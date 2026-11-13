@@ -1,64 +1,10 @@
 #!/usr/bin/env bash
-# audio-output-routing.sh
-#
-# Shared logic for pinning EasyEffects' REAL hardware output between the
-# built-in laptop speaker and a connected Bluetooth headset, overriding
-# the automatic BT-always-wins policy in
-# ~/.config/wireplumber/wireplumber.conf.d/51-bluetooth-audio-priority.conf
-# when the user explicitly wants otherwise (e.g. force speakers while
-# headphones stay connected).
-#
-# Sourced by:
-#   - audio-output-switch.sh   (manual switch, e.g. the quickshell bar button)
-#   - easyeffects-bt-relink.sh (daemon that converges the real graph on intent)
-#   - ee-volume.sh             (volume/mute: needs to know the real sink)
-#
-# STATE FILES (~/.config/audio-output-switch/)
-#   override  -- "speaker" | "headphones" | absent (= auto, BT-wins policy)
-#   route     -- "speaker" | "headphones": the CURRENTLY INTENDED target
-#                (override if set, else the BT-wins policy pick), i.e.
-#                route_label_for_sink(desired_sink_name()). This is what
-#                the bar button's icon reads (via quickshell FileView).
-#
-# NOTE ON WHY THE ICON SHOWS "intended" AND NOT "verified real link":
-# EasyEffects' internal SOE (sink output effects) chain -- including
-# ee_soe_output_level, the node whose output ports actually reach
-# hardware -- gets destroyed and rebuilt by EasyEffects itself while
-# idle/resuming (observed directly: `pw-link -l` output for this node
-# flaps across consecutive calls a second apart even with no BT/device
-# changes happening), and again for ~20s after a restart. Driving the bar
-# icon off that raw link would flap the icon on every idle/resume cycle
-# for reasons that have nothing to do with which output the user asked
-# for. `route` instead reflects *intent*; the daemon's converge() is what
-# makes the real graph match it again.
-#
-# WHY INTENT ALONE IS NOT ENOUGH (2026-10-02, root-caused):
-# The real link is created by EasyEffects from its *own* stored output
-# device (`outputDevice` in ~/.config/easyeffects/db/easyeffectsrc`,
-# currently the built-in speaker), not from the BT-wins policy: observed
-# directly on 2026-10-02, with the OnePlus Buds connected (bluez sink at
-# priority.session 2500 vs the speaker's 200), a freshly restarted
-# EasyEffects still created
-# `ee_soe_output_level:output_FL -> alsa_output...Speaker__sink:playback_FL`.
-# The system default sink is easyeffects_sink itself (apps must route
-# through the DSP), so EE's `useDefaultOutputDevice=true` cannot resolve
-# to a real device and EE falls back to its stored outputDevice -- which
-# means "restart EE and let it re-pick" (the original design) can never
-# converge for Bluetooth at all, and the link has to be re-pointed from
-# the outside. That is only possible while EE's chain is up, and that
-# (see above) is only while audio is actually flowing. Two live symptoms
-# followed from ignoring that:
-#   * a switch made while idle did nothing until the *next* stream
-#     started, and then only 15-25s later (the old sweep + recheck) --
-#     "the switcher only works if audio is already playing";
-#   * "chain down while a stream is listed" looked like a wedged
-#     EasyEffects, so the daemon restarted EE every ~22s forever (a
-#     paused Spotify keeps a sink input listed even though nothing is
-#     playing).
-# Everything below is therefore written to be called from a tight loop by
-# the daemon: cheap, idempotent, and honest about what it can and cannot
-# do right now. Playback is tested with streams_playing() (uncorked), and
-# chain presence with ee_chain_present() (ports, not links).
+# Shared routing for the output switch, routing controller, and volume keys.
+# Keep the hardware sink as the system default so Easy Effects tracks it.
+# Easy Effects redirects applications through its virtual sink.
+# Manual links only repair a stale output route. Never duplicate stereo links.
+# The override file contains speaker or headphones. No override means automatic.
+# The route file records intent for the panel, including while audio is idle.
 
 set -u
 
@@ -161,15 +107,7 @@ streams_playing() {
 # EasyEffects itself tears down/rebuilds on idle/resume. Used to decide
 # whether a fix is needed, NOT for what the bar displays.
 ee_output_target() {
-  timeout 5 pw-link -l 2>/dev/null | awk '
-    /^ee_soe_output_level:output_FL/ {found=1; next}
-    found && /^[[:space:]]*\|->/ {
-      gsub(/^[[:space:]]*\|->[[:space:]]*/, "", $0)
-      sub(/:.*/, "", $0)
-      print $0
-      exit
-    }
-  '
+  ee_output_link_pairs | awk 'NR == 1 { sub(/:.*/, "", $2); print $2 }'
 }
 
 # Every link currently leaving EE's chain output, as "<out_port> <in_port>".
@@ -200,8 +138,19 @@ ee_output_link_pairs() {
 # daemon on 2026-10-02, so every decision below goes through this.
 ee_output_state() {
   ee_output_link_pairs | awk '
-    { if (!first) { first = $2; sub(/:.*/, "", first) } n++ }
-    END { printf "%s %d\n", first, n + 0 }
+    {
+      node = $2
+      sub(/:.*/, "", node)
+      if (!first) first = node
+      if (node != first) mixed = 1
+      if ($1 ~ /:output_FL$/ && $2 ~ /:playback_FL$/) left++
+      if ($1 ~ /:output_FR$/ && $2 ~ /:playback_FR$/) right++
+      n++
+    }
+    END {
+      valid = !mixed && left == 1 && right == 1
+      printf "%s %d\n", (valid ? first : "-"), n + 0
+    }
   '
 }
 
@@ -252,6 +201,9 @@ relink_ee_output() {
   # see the "do not hand-create extra links" note in docs/machine.md.
   (
     flock -w 5 9 || exit 1
+    # Another caller can complete the route while this caller waits.
+    read -r cur count < <(ee_output_state)
+    [[ "$cur" == "$target" && "$count" == 2 ]] && exit 0
     mapfile -t pairs < <(ee_output_link_pairs)
     for p in "${pairs[@]}"; do
       timeout 5 pw-link -d "${p%% *}" "${p#* }" 2>/dev/null

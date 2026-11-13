@@ -16,7 +16,7 @@ The deploy script skips differing files. Apply one reviewed, non-private home fi
 
 Never commit passwords, API keys, SSH private keys, signing keys, OAuth stores, kubeconfigs, wireless profiles, generated databases, browser profiles, or local backups. Keep hotspot credentials in a local private source outside this checkout. Keep host addresses and tokens in local-only configuration when a public example is sufficient. Do not add `.apply-backups/` or an entire `$HOME` or `/etc` directory.
 
-The live Zed settings contain a private API key. The tracked settings must not pick it up through synchronization. A scanner cannot prove the absence of all secrets, so read every diff.
+The live Zed settings contain a private API key, and the live rclone config contains a Google Drive client secret and token. Both files are tracked as sanitized copies: the Zed copy has an empty `context7_api_key` and a placeholder Ollama URL, and the rclone copy keeps the remote name and type only. Edit the live file to change the real values. Never copy either live file into the checkout. `sync-from-home.sh` refuses both paths. The rclone sync scripts contain no credentials and stay tracked as is.
 
 The hotspot script reads two lines from `~/.config/hotspot/credentials`: SSID, then passphrase. The file has mode `600` and stays outside Git. The Quickshell toggle calls `~/Scripts/bin/hotspot` with `status`, `stop`, and `--daemon`. There is no sleep-resume hook, because a root hook cannot read the user-owned credential safely. Restart the hotspot by hand after suspend.
 
@@ -24,7 +24,7 @@ The hotspot script reads two lines from `~/.config/hotspot/credentials`: SSID, t
 
 Install end-4 from its upstream project and use its chosen revision as the base. Its `hyprland.lua` loads `hyprland/*` and then `custom/*`, so `custom/` is the stable user extension point. Quickshell runs as `qs -c ii` in the current session. Rebase local Quickshell changes onto the upstream version before deploying. Keep the patch and any required owned modules synchronized.
 
-Two patches record in-place edits to upstream files. `patches/quickshell-ii-local.patch` covers `~/.config/quickshell/ii/`. `patches/hyprland-local.patch` covers `~/.config/hypr/hyprland/general.lua`. Both apply with `patch -p1` against upstream commit `301185c7`. Regenerate them after each change to a tracked upstream file. Matugen overwrites `hypr/hyprland/colors.lua`, `hypr/hyprlock/colors.conf`, `fuzzel/fuzzel_theme.ini`, and the GTK and Zed theme outputs. Do not track those files.
+Two patches record in-place edits to upstream files. `patches/quickshell-ii-local.patch` covers `~/.config/quickshell/ii/`, including the screenshare script, `BarContent.qml`, and the Hotspot toggle. `patches/hyprland-local.patch` covers `~/.config/hypr/hyprland/general.lua`. Both apply with `patch -p1` against upstream commit `301185c7`. Regenerate them after each change to a tracked upstream file: copy the upstream tree to a scratch Git repository, commit it, overlay the tracked files, and take `git diff --cached`. Matugen overwrites `hypr/hyprland/colors.lua`, `hypr/hyprlock/colors.conf`, `fuzzel/fuzzel_theme.ini`, and the GTK and Zed theme outputs. Do not track those files.
 
 ## Special state
 

@@ -67,8 +67,7 @@ if status is-interactive
     abbr --add z    zoxide
 end
 
-# Prompt: Oh My Posh is the single canonical prompt across every machine.
-oh-my-posh init fish --config ~/.config/oh-my-posh/themes/night-owl.omp.json | source
+# Prompt: Tide loads automatically from Fish's functions directory.
 
 # Shell integrations
 zoxide init fish | source

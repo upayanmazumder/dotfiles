@@ -1,6 +1,7 @@
 # Local modifications to the dots-hyprland 'ii' Quickshell config.
 # Baseline: upstream commit 301185c7 (~/dev/upayanmazumder/dots-hyprland, branch main)
-# Regenerate: see docs/machine.md 'Local Quickshell modifications'
+# Covers tracked Quickshell overlays, including the screenshare toggle.
+# Regenerate: see docs/config-management.md 'End-4 base'
 # Apply after a dots update:  cd ~/.config/quickshell/ii && patch -p1 < .../quickshell-ii-local.patch
 
 diff --git a/modules/common/Appearance.qml b/modules/common/Appearance.qml
@@ -17,7 +18,7 @@ index bedf01e..b5e3e9f 100644
      }
  
 diff --git a/modules/common/Config.qml b/modules/common/Config.qml
-index ee068bd..1dc7d86 100644
+index ee068bd..bb87d18 100644
 --- a/modules/common/Config.qml
 +++ b/modules/common/Config.qml
 @@ -203,6 +203,12 @@ Singleton {
@@ -33,20 +34,24 @@ index ee068bd..1dc7d86 100644
                      property JsonObject weather: JsonObject {
                          property bool enable: false
                          property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
-@@ -257,6 +263,7 @@ Singleton {
+@@ -257,6 +263,8 @@ Singleton {
                      property bool showDarkModeToggle: true
                      property bool showPerformanceProfileToggle: false
                      property bool showScreenRecord: false
++                    property bool showScreenShare: true
 +                    property bool showAudioOutputToggle: true
                  }
                  property JsonObject workspaces: JsonObject {
                      property bool monochromeIcons: true
 diff --git a/modules/common/Directories.qml b/modules/common/Directories.qml
-index 78b0a9e..ca8ef93 100644
+index 78b0a9e..1ed886d 100644
 --- a/modules/common/Directories.qml
 +++ b/modules/common/Directories.qml
-@@ -50,6 +50,8 @@ Singleton {
+@@ -48,8 +48,11 @@ Singleton {
+     property string aiChats: FileUtils.trimFileProtocol(`${Directories.state}/user/ai/chats`)
+     property string aiTranslationScriptPath: FileUtils.trimFileProtocol(`${Directories.scriptPath}/ai/gemini-translate.sh`)
      property string recordScriptPath: FileUtils.trimFileProtocol(`${Directories.scriptPath}/videos/record.sh`)
++    property string screenshareToggleScriptPath: FileUtils.trimFileProtocol(`${Directories.scriptPath}/screenshare/toggle.sh`)
      property string userAvatarPathAccountsService: FileUtils.trimFileProtocol(`/var/lib/AccountsService/icons/${SystemInfo.username}`)
      property string userAvatarPathRicersAndWeirdSystems: FileUtils.trimFileProtocol(`${Directories.home}.face`)
 +    property string audioOutputSwitchDir: FileUtils.trimFileProtocol(`${Directories.home}/.config/audio-output-switch`)
@@ -210,6 +215,34 @@ index 0000000..aa1f30f
 +        color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.35)
 +    }
 +}
+diff --git a/modules/ii/bar/BarContent.qml b/modules/ii/bar/BarContent.qml
+index 3bec758..323b044 100644
+--- a/modules/ii/bar/BarContent.qml
++++ b/modules/ii/bar/BarContent.qml
+@@ -317,6 +317,23 @@ Item { // Bar content region
+                 }
+             }
+ 
++            Loader { // Screen share (VNC) toggle
++                id: screenShareButtonLoader
++                active: Config.options.bar.utilButtons.showScreenShare
++                visible: active
++                Layout.alignment: Qt.AlignVCenter
++                sourceComponent: CircleUtilButton {
++                    onClicked: Quickshell.execDetached(["bash", Directories.screenshareToggleScriptPath])
++                    MaterialSymbol {
++                        horizontalAlignment: Qt.AlignHCenter
++                        fill: 1
++                        text: "cast"
++                        iconSize: Appearance.font.pixelSize.large
++                        color: Appearance.colors.colOnLayer0
++                    }
++                }
++            }
++
+             SysTray {
+                 visible: root.useShortenedForm === 0
+                 Layout.fillWidth: false
 diff --git a/modules/ii/bar/UtilButtons.qml b/modules/ii/bar/UtilButtons.qml
 index 615ed65..18e65b6 100644
 --- a/modules/ii/bar/UtilButtons.qml
@@ -510,6 +543,165 @@ index e42f735..e57b810 100644
              }
          }
  
+diff --git a/scripts/screenshare/toggle.sh b/scripts/screenshare/toggle.sh
+new file mode 100755
+index 0000000..2174799
+--- /dev/null
++++ b/scripts/screenshare/toggle.sh
+@@ -0,0 +1,153 @@
++#!/usr/bin/env bash
++# Screen sharing toggle for Hyprland / wayvnc.
++# Usage: toggle.sh toggle|start|stop|status
++set -uo pipefail
++
++PORT=5900
++RUNTIME="${XDG_RUNTIME_DIR:-/tmp}"
++PIDFILE="$RUNTIME/screenshare.pid"
++LOG="$RUNTIME/screenshare.log"
++
++get_output() {
++    hyprctl monitors -j 2>/dev/null | python3 -c '
++import json, sys
++try:
++    monitors = json.load(sys.stdin)
++except Exception:
++    sys.exit(1)
++names = [m["name"] for m in monitors if m.get("focused") and not m.get("disabled")]
++if not names:
++    names = [m["name"] for m in monitors if not m.get("disabled")]
++if names:
++    print(names[0])
++' 2>/dev/null
++}
++
++get_ip() {
++    local ip
++    ip=$(ip -4 -o addr show dev ap0 scope global 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -1)
++    if [ -z "$ip" ]; then
++        ip=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i=="src") {print $(i+1); exit}}')
++    fi
++    if [ -z "$ip" ]; then
++        ip=$(ip -4 -o addr show scope global 2>/dev/null | awk '$2 != "tailscale0" {print $4}' | cut -d/ -f1 | head -1)
++    fi
++    echo "${ip:-127.0.0.1}"
++}
++
++url() {
++    echo "vnc://$(get_ip):$PORT"
++}
++
++# Port listening AND our recorded process alive.
++is_running() {
++    ss -ltn 2>/dev/null | grep -q ":$PORT " || return 1
++    [ -f "$PIDFILE" ] || return 1
++    local pid
++    pid=$(cat "$PIDFILE" 2>/dev/null)
++    [ -n "$pid" ] || return 1
++    kill -0 "$pid" 2>/dev/null || return 1
++    return 0
++}
++
++port_busy() {
++    ss -ltn 2>/dev/null | grep -q ":$PORT "
++}
++
++fail() {
++    local msg="$1"
++    local tail_log
++    tail_log=$(tail -n 5 "$LOG" 2>/dev/null)
++    notify-send -u critical "Screen sharing failed" "$msg"$'\n'"$tail_log" 2>/dev/null
++    printf 'error: %s\n%s\n' "$msg" "$tail_log" >&2
++    exit 1
++}
++
++start() {
++    if is_running; then
++        echo 1
++        url
++        return 0
++    fi
++    if port_busy; then
++        fail "port $PORT is already in use by another process"
++    fi
++
++    local output
++    output=$(get_output)
++    : > "$LOG"
++    if [ -n "$output" ]; then
++        nohup wayvnc -o "$output" "0.0.0.0:$PORT" >>"$LOG" 2>&1 &
++    else
++        nohup wayvnc "0.0.0.0:$PORT" >>"$LOG" 2>&1 &
++    fi
++    local pid=$!
++    echo "$pid" > "$PIDFILE"
++
++    for _ in $(seq 1 50); do
++        if ! kill -0 "$pid" 2>/dev/null; then
++            break
++        fi
++        if ss -ltn 2>/dev/null | grep -q ":$PORT "; then
++            local u
++            u=$(url)
++            notify-send "Screen sharing on" "$u" 2>/dev/null
++            if command -v wl-copy >/dev/null 2>&1; then
++                printf '%s' "$u" | wl-copy 2>/dev/null
++            fi
++            echo 1
++            echo "$u"
++            return 0
++        fi
++        sleep 0.1
++    done
++
++    kill "$pid" 2>/dev/null
++    rm -f "$PIDFILE"
++    fail "wayvnc did not open port $PORT (output: ${output:-default})"
++}
++
++stop() {
++    if [ -f "$PIDFILE" ]; then
++        local pid
++        pid=$(cat "$PIDFILE" 2>/dev/null)
++        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
++            kill "$pid" 2>/dev/null
++            for _ in $(seq 1 50); do
++                kill -0 "$pid" 2>/dev/null || break
++                sleep 0.1
++            done
++            kill -9 "$pid" 2>/dev/null
++        fi
++        rm -f "$PIDFILE"
++    fi
++    if is_running; then
++        fail "port $PORT is still listening after stop"
++    fi
++    notify-send "Screen sharing off" 2>/dev/null
++    echo 0
++}
++
++case "${1:-toggle}" in
++    start) start ;;
++    stop) stop ;;
++    status)
++        if is_running; then
++            echo 1
++            url
++        else
++            echo 0
++        fi
++        ;;
++    toggle)
++        if is_running; then
++            stop
++        else
++            start
++        fi
++        ;;
++    *)
++        echo "usage: $0 toggle|start|stop|status" >&2
++        exit 2
++        ;;
++esac
 diff --git a/services/Audio.qml b/services/Audio.qml
 index 68ebc3a..3230062 100644
 --- a/services/Audio.qml

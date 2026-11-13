@@ -73,3 +73,12 @@ repositories:
   password: ""
   url: https://argoproj.github.io/argo-helm
   username: ""
+- caFile: ""
+  certFile: ""
+  insecure_skip_tls_verify: false
+  keyFile: ""
+  name: sigstore
+  pass_credentials_all: false
+  password: ""
+  url: https://sigstore.github.io/helm-charts
+  username: ""

@@ -40,6 +40,12 @@ hl.window_rule({ match = { class = "^(kitty-notes)$" },   workspace = "special:n
 -- whatever is underneath.
 hl.window_rule({ match = { class = "^(dev\\.zed\\.Zed)$" }, no_blur = false })
 
+-- Restore blur for Kitty terminals, including the terminal and notes scratchpads.
+hl.window_rule({ match = { class = "^(kitty|kitty-scratch|kitty-notes)$" }, no_blur = false })
+
+-- Keep Dolphin's native Kvantum transparency and blur the desktop behind it.
+hl.window_rule({ match = { class = "^(org\\.kde\\.dolphin)$" }, no_blur = false })
+
 -- ── Transparent EasyEffects ────────────────────────────────────────────────
 -- EasyEffects is GTK4/libadwaita, so Kvantum cannot provide translucency.
 -- Keep its existing compositor opacity without changing its blur behavior.

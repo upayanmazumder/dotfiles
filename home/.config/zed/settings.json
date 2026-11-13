@@ -1,4 +1,5 @@
-// Zed settings -- tracked in this checkout (home/.config/zed/settings.json).
+// Zed settings -- tracked in ~/dev/upayanmazumder/dotfiles (home/.config/zed/settings.json).
+// This copy has no secrets. Add the Context7 key and the Ollama URL locally.
 //
 // Ported from the VS Code setup this machine ran until 2026-09-16:
 //   editor.formatOnSave: true        -> format_on_save: "on"
@@ -26,11 +27,29 @@
 // comes from Hyprland, which needs the dev.zed.Zed no_blur=false rule in
 // ~/.config/hypr/custom/rules.lua (the framework disables blur on all windows).
 {
+  "diagnostics": {
+    "inline": {
+      "padding": 1,
+    },
+  },
+  "diff_view_style": "unified",
+  "context_servers": {
+    "mcp-server-context7": {
+      "enabled": true,
+      "remote": false,
+      "settings": {
+        // Private key: set it locally, this copy stays empty.
+        "context7_api_key": "",
+      },
+    },
+  },
   "project_panel": {
-    "dock": "left"
+    "dock": "left",
   },
   "git_panel": {
-    "dock": "right"
+    "group_by": "staging",
+    "tree_view": false,
+    "dock": "right",
   },
   "cli_default_open_behavior": "existing_window",
   "theme": "Catppuccin Mocha (Blur) [Heavy]",
@@ -45,24 +64,40 @@
   // discovery off rather than let it interrogate a random container.
   // Note the settings key is "llama.cpp" WITH the dot, not llama_cpp.
   "language_models": {
+    "ollama": {
+      // Private LAN host: set the real URL locally.
+      "api_url": "http://localhost:11434",
+      "available_models": [
+        {
+          "name": "qwen2.5-coder:1.5b",
+          "display_name": "Qwen 2.5 Coder 1.5B (syn)",
+          "max_tokens": 32768,
+        },
+        {
+          "name": "qwen2.5-coder:0.5b",
+          "display_name": "Qwen 2.5 Coder 0.5B - Fast (syn)",
+          "max_tokens": 32768,
+        },
+      ],
+    },
     "llama.cpp": {
       "auto_discover": false,
-      "available_models": []
-    }
+      "available_models": [],
+    },
   },
 
   "ui_font_size": 16,
   "buffer_font_size": 15,
   "buffer_font_family": "JetBrainsMono Nerd Font Mono",
   "buffer_font_features": {
-    "calt": true
+    "calt": true,
   },
 
   "autosave": "on_focus_change",
   "format_on_save": "on",
   "soft_wrap": "editor_width",
   "session": {
-    "trust_all_worktrees": true
+    "trust_all_worktrees": true,
   },
 
   "terminal": {
@@ -82,7 +117,12 @@
     "font_family": "JetBrainsMono Nerd Font Mono",
     "font_size": 14,
     "copy_on_select": true,
-    "blinking": "off"
+    "blinking": "off",
+  },
+
+  // Markdown preview
+  "markdown_preview": {
+    "max_width": 2880,
   },
 
   // Zed bundles prettier, so the JS/TS/JSON/CSS/HTML/YAML/Markdown formatting
@@ -99,10 +139,14 @@
       "formatter": {
         "external": {
           "command": "black",
-          "arguments": ["-q", "-"]
-        }
-      }
-    }
+          "arguments": ["-q", "-"],
+        },
+      },
+    },
+    "Markdown": {
+      "soft_wrap": "editor_width",
+      "preferred_line_length": 9999,
+    },
   },
 
   // Zed ships Rust/TS/JS/TSX/Python/Go/C/C++/JSON/YAML/Markdown/Bash built in.
@@ -131,6 +175,6 @@
     // wakatime-cli + wakatime-ls into ~/.local/share/zed/extensions/work on
     // first use -- the ~/.wakatime/wakatime-cli install is only used by other
     // editors. API key lives in ~/.wakatime.cfg (untracked, not in this repo).
-    "wakatime": true
-  }
+    "wakatime": true,
+  },
 }
