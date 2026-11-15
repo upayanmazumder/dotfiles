@@ -137,6 +137,23 @@ Singleton {
                     property string type: "auto" // Allowed: auto, scheme-content, scheme-expressive, scheme-fidelity, scheme-fruit-salad, scheme-monochrome, scheme-neutral, scheme-rainbow, scheme-tonal-spot
                     property string accentColor: ""
                 }
+                property JsonObject liquidGlass: JsonObject {
+                    property bool enable: false
+                    property real tint: 0.10
+                    property real contentTransparency: 0.78
+                    property string accentColor: ""
+                    property string mode: "clear"
+                    property real tintAmount: 0.6
+                    property real edgeHighlight: 1.0
+                    property real refraction: 1.0
+                    property string pressGlow: "subtle"
+                    property bool glowSpread: true
+                    property string highlights: "top"
+                    property bool darkEdge: true
+                    property bool nearReflection: true
+                    property bool capsuleBar: false
+                    property bool modularSidebar: true
+                }
             }
 
             property JsonObject audio: JsonObject {
@@ -164,20 +181,7 @@ Singleton {
             property JsonObject background: JsonObject {
                 property bool widgetsLocked: false
                 property JsonObject widgets: JsonObject {
-                    property bool blurWidgets: false
-                    property real blurRadius: 32
                     property bool shadow: true
-                    property JsonObject glass: JsonObject {
-                        property bool enable: false
-                        property string tint: "transparent"
-                        property real tintStrength: 0.3
-                        property real rimWidth: 16
-                        property real pull: 26
-                        property real split: 0.06
-                        property real haze: 3
-                        property real vividness: 1.3
-                        property real sheen: 0.55
-                    }
                     property JsonObject clock: JsonObject {
                         property bool enable: true
                         property bool showOnlyWhenLocked: false

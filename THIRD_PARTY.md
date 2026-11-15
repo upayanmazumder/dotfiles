@@ -15,13 +15,22 @@ The selected desktop widgets and lyrics implementation derive from [pctrade/end4
 The port includes these files under `home/.config/quickshell/ii/`:
 
 - `modules/ii/background/widgets/{media,calendar,worldclock,resources}/`
-- `modules/common/widgets/{AndroidClock,ComboChevronBadge,FastBlurred,FlipCard,FrostedGlass,Lyrics,ResizeHandler,StyledComboBoxSearch,StyledTextEditMenu,TouchpadScrollArea,WidgetCard,WidgetFlipHandle}.qml`
-- `modules/common/widgets/shaders/liquidLens.frag` and its compiled `.qsb` file
+- `modules/common/widgets/{AndroidClock,ComboChevronBadge,FlipCard,Lyrics,ResizeHandler,StyledComboBoxSearch,StyledTextEditMenu,TouchpadScrollArea,WidgetCard,WidgetFlipHandle}.qml`
 - `services/{LyricsService,WorldClock}.qml` and `scripts/lyrics/lyrics.py`
 
 `modules/ii/background/WidgetsLoader.qml` adapts the upstream loader for the selected widgets. Local base components expose the properties these widgets require.
 
 The port excludes preset images, fonts, and personal media. [end4-pCpresets](https://github.com/pctrade/end4-pCpresets) supplies visual presets, not widget code.
+
+## Nothing Liquid
+
+The active glass material derives from [shlok-shinde/nothing-liquid](https://github.com/shlok-shinde/nothing-liquid). Its dotfiles fork uses GPL-3.0. The imported shell material targets `shlok-shinde/dots-hyprland` commit `c1c730608a55129ce07e407d365f3675d8d1f009`.
+
+The port includes `services/LiquidGlass.qml`, `LiquidGlassEffect.qml`, and `modules/common/shaders/liquidglass.frag` with its compiled `.qsb` file. `LiquidGlassConfig.qml` extracts the upstream settings section. `WallpaperGlass.qml`, the widget cards, and `hypr/custom/liquidglass.lua` adapt this material to the existing overlay.
+
+The compositor plugin derives from [shlok-shinde/hyprglass](https://github.com/shlok-shinde/hyprglass), commit `93dbe1907391b12699b57040ed694e4dc851a1e5`. It uses the BSD 3-Clause license and credits Jeremy Trufier. The license text is in `licenses/hyprglass-BSD-3-Clause.txt`. The plugin source and built library stay outside this repository.
+
+The port excludes the upstream wallpaper, login screen, assistant integrations, and minimize bindings. Existing end-4 settings and the selected desktop widgets remain in place.
 
 ## Oh My Posh themes
 
@@ -29,7 +38,7 @@ The port excludes preset images, fonts, and personal media. [end4-pCpresets](htt
 
 ## BonaFides Rounded Kvantum
 
-`home/.config/Kvantum/BonaFides-Rounded-Kvantum/` is the unmodified theme by l4k1 (L4ki), from [L4ki/BonaFides-Plasma-Themes](https://github.com/L4ki/BonaFides-Plasma-Themes), which is GPL-3.0. It supplies the translucent and blurred Qt look, including Dolphin's glass. `kvantum.kvconfig` selects it.
+`home/.config/Kvantum/BonaFides-Rounded-Kvantum/` is the unmodified theme by l4k1 (L4ki), from [L4ki/BonaFides-Plasma-Themes](https://github.com/L4ki/BonaFides-Plasma-Themes), which uses GPL-3.0. The files remain as an alternative. The active Qt style is Darkly, configured for Nothing Liquid.
 
 ## Cava shaders
 

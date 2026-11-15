@@ -1,6 +1,7 @@
 # Local modifications to the dots-hyprland ii Quickshell config.
 # Baseline: upstream main commit cb1c428b.
-# Includes selected pctrade/end4-pC widgets from 7538c66f2597959733c26a4ccccac1ebe6b4f56e.
+# Selected pctrade widgets: 7538c66f2597959733c26a4ccccac1ebe6b4f56e.
+# Nothing Liquid shell material: c1c730608a55129ce07e407d365f3675d8d1f009.
 # Regenerate: see docs/config-management.md, End-4 base.
 # Apply from ~/.config/quickshell/ii: git apply --binary /path/to/quickshell-ii-local.patch
 
@@ -17,10 +18,55 @@ index bfb531e..508c5fd 100644
      property bool osdVolumeOpen: false
      property bool oskOpen: false
 diff --git a/modules/common/Appearance.qml b/modules/common/Appearance.qml
-index bedf01e..b5e3e9f 100644
+index bedf01e..0148cce 100644
 --- a/modules/common/Appearance.qml
 +++ b/modules/common/Appearance.qml
-@@ -207,7 +207,7 @@ Singleton {
+@@ -31,8 +31,24 @@ Singleton {
+         return Math.max(0, Math.min(0.22, y)) - 0.12 * (m3colors.darkmode ? 0 : 1)
+     }
+     property real autoContentTransparency: 0.9
+-    property real backgroundTransparency: Config?.options.appearance.transparency.enable ? Config?.options.appearance.transparency.automatic ? autoBackgroundTransparency : Config?.options.appearance.transparency.backgroundTransparency : 0
+-    property real contentTransparency: Config?.options.appearance.transparency.automatic ? autoContentTransparency : Config?.options.appearance.transparency.contentTransparency
++    property bool liquidGlass: Config?.options.appearance.liquidGlass.enable ?? false
++    property bool hasAccent: (Config?.options.appearance.liquidGlass.accentColor ?? "") !== ""
++    property color accent: !hasAccent ? colors.colPrimary
++        : (!m3colors.darkmode && Qt.color(Config.options.appearance.liquidGlass.accentColor).hslLightness > 0.85) ? "#1A1A1A"
++        : Config.options.appearance.liquidGlass.accentColor
++    property color colOnAccent: {
++        if (!hasAccent)
++            return colors.colOnPrimary;
++        const lin = c => c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
++        const l = 0.2126 * lin(accent.r) + 0.7152 * lin(accent.g) + 0.0722 * lin(accent.b);
++        return 1.05 / (l + 0.05) >= 3 ? "white" : "#1A1A1A";
++    }
++    property bool liquidCapsuleBar: liquidGlass && Config.options.appearance.liquidGlass.capsuleBar
++    property bool liquidModularSidebar: liquidGlass && Config.options.appearance.liquidGlass.modularSidebar
++    property real backgroundTransparency: liquidGlass ? 1 - Config.options.appearance.liquidGlass.tint
++        : Config?.options.appearance.transparency.enable ? Config?.options.appearance.transparency.automatic ? autoBackgroundTransparency : Config?.options.appearance.transparency.backgroundTransparency : 0
++    property real contentTransparency: liquidGlass ? Config.options.appearance.liquidGlass.contentTransparency
++        : Config?.options.appearance.transparency.automatic ? autoContentTransparency : Config?.options.appearance.transparency.contentTransparency
+ 
+     m3colors: QtObject {
+         property bool darkmode: true
+@@ -116,7 +132,7 @@ Singleton {
+         property color colOnLayer0: m3colors.m3onBackground
+         property color colLayer0Hover: ColorUtils.transparentize(ColorUtils.mix(colLayer0, colOnLayer0, 0.9, root.contentTransparency))
+         property color colLayer0Active: ColorUtils.transparentize(ColorUtils.mix(colLayer0, colOnLayer0, 0.8, root.contentTransparency))
+-        property color colLayer0Border: ColorUtils.mix(root.m3colors.m3outlineVariant, colLayer0, 0.4)
++        property color colLayer0Border: root.liquidGlass ? "transparent" : ColorUtils.mix(root.m3colors.m3outlineVariant, colLayer0, 0.4)
+         // Layer 1
+         property color colLayer1Base: m3colors.m3surfaceContainerLow
+         property color colLayer1: ColorUtils.solveOverlayColor(colLayer0Base, colLayer1Base, 1 - root.contentTransparency);
+@@ -185,7 +201,7 @@ Singleton {
+         property color colTooltip: m3colors.m3inverseSurface
+         property color colOnTooltip: m3colors.m3inverseOnSurface
+         property color colScrim: ColorUtils.transparentize(m3colors.m3scrim, 0.5)
+-        property color colShadow: ColorUtils.transparentize(m3colors.m3shadow, 0.7)
++        property color colShadow: root.liquidGlass ? "transparent" : ColorUtils.transparentize(m3colors.m3shadow, 0.7)
+         property color colOutline: m3colors.m3outline
+         property color colOutlineVariant: m3colors.m3outlineVariant
+         property color colError: m3colors.m3error
+@@ -207,7 +223,7 @@ Singleton {
          property int large: 23
          property int verylarge: 30
          property int full: 9999
@@ -30,33 +76,44 @@ index bedf01e..b5e3e9f 100644
      }
  
 diff --git a/modules/common/Config.qml b/modules/common/Config.qml
-index 5fcd1bb..0a453a5 100644
+index 5fcd1bb..98b70fb 100644
 --- a/modules/common/Config.qml
 +++ b/modules/common/Config.qml
-@@ -162,7 +162,22 @@ Singleton {
+@@ -137,6 +137,23 @@ Singleton {
+                     property string type: "auto" // Allowed: auto, scheme-content, scheme-expressive, scheme-fidelity, scheme-fruit-salad, scheme-monochrome, scheme-neutral, scheme-rainbow, scheme-tonal-spot
+                     property string accentColor: ""
+                 }
++                property JsonObject liquidGlass: JsonObject {
++                    property bool enable: false
++                    property real tint: 0.10
++                    property real contentTransparency: 0.78
++                    property string accentColor: ""
++                    property string mode: "clear"
++                    property real tintAmount: 0.6
++                    property real edgeHighlight: 1.0
++                    property real refraction: 1.0
++                    property string pressGlow: "subtle"
++                    property bool glowSpread: true
++                    property string highlights: "top"
++                    property bool darkEdge: true
++                    property bool nearReflection: true
++                    property bool capsuleBar: false
++                    property bool modularSidebar: true
++                }
+             }
+ 
+             property JsonObject audio: JsonObject {
+@@ -162,7 +179,9 @@ Singleton {
              }
  
              property JsonObject background: JsonObject {
 +                property bool widgetsLocked: false
                  property JsonObject widgets: JsonObject {
-+                    property bool blurWidgets: false
-+                    property real blurRadius: 32
 +                    property bool shadow: true
-+                    property JsonObject glass: JsonObject {
-+                        property bool enable: false
-+                        property string tint: "transparent"
-+                        property real tintStrength: 0.3
-+                        property real rimWidth: 16
-+                        property real pull: 26
-+                        property real split: 0.06
-+                        property real haze: 3
-+                        property real vividness: 1.3
-+                        property real sheen: 0.55
-+                    }
                      property JsonObject clock: JsonObject {
                          property bool enable: true
                          property bool showOnlyWhenLocked: false
-@@ -203,12 +218,54 @@ Singleton {
+@@ -203,12 +222,54 @@ Singleton {
                              property string text: ""
                          }
                      }
@@ -111,7 +168,7 @@ index 5fcd1bb..0a453a5 100644
                  }
                  property string wallpaperPath: ""
                  property string thumbnailPath: ""
-@@ -257,6 +314,8 @@ Singleton {
+@@ -257,6 +318,8 @@ Singleton {
                      property bool showDarkModeToggle: true
                      property bool showPerformanceProfileToggle: false
                      property bool showScreenRecord: false
@@ -120,7 +177,7 @@ index 5fcd1bb..0a453a5 100644
                  }
                  property JsonObject workspaces: JsonObject {
                      property bool monochromeIcons: true
-@@ -340,6 +399,7 @@ Singleton {
+@@ -340,6 +403,7 @@ Singleton {
                      property int mouseScrollDeltaThreshold: 120 // delta >= this then it gets detected as mouse scroll rather than touchpad
                      property int mouseScrollFactor: 120
                      property int touchpadScrollFactor: 450
@@ -128,7 +185,7 @@ index 5fcd1bb..0a453a5 100644
                  }
                  property JsonObject deadPixelWorkaround: JsonObject { // Hyprland leaves out 1 pixel on the right for interactions
                      property bool enable: false
-@@ -391,6 +451,7 @@ Singleton {
+@@ -391,6 +455,7 @@ Singleton {
              property JsonObject media: JsonObject {
                  // Attempt to remove dupes (the aggregator playerctl one and browsers' native ones when there's plasma browser integration)
                  property bool filterDuplicatePlayers: true
@@ -207,6 +264,275 @@ index 0000000..9902fee
 +        }
 +    }
 +}
+diff --git a/modules/common/shaders/liquidglass.frag b/modules/common/shaders/liquidglass.frag
+new file mode 100644
+index 0000000..ed39b4e
+--- /dev/null
++++ b/modules/common/shaders/liquidglass.frag
+@@ -0,0 +1,126 @@
++#version 440
++// Liquid glass for surfaces the compositor's glass plugin can't reach (the
++// lock screen). The same optics as hyprglass, in the shell: the glass takes
++// its shape from `mask` (any item's alpha), reads its height from `field`
++// (that shape blurred by about the bezel width), and refracts `behind`.
++//
++// Compile: qsb --glsl "100 es,120,150" -o liquidglass.frag.qsb liquidglass.frag
++
++layout(location = 0) in vec2 qt_TexCoord0;
++layout(location = 0) out vec4 fragColor;
++
++layout(std140, binding = 0) uniform buf {
++    mat4 qt_Matrix;
++    float qt_Opacity;
++    vec2 itemSize;     // px of the padded box all three textures cover
++    float bezel;       // px of curved rim
++    float refraction;  // px the rim shifts what is behind it
++    float bodyLens;    // magnification across the whole pane (0.03 = 3%)
++    float frost;       // px of blur in what shows through
++    float rim;         // brightness of the one-pixel edge
++    float brightness;
++    float adaptiveDim; // dark mode: how hard bright backdrops are pulled down (readability)
++    vec4 tint;         // rgb, a = amount
++    float dispersion;  // chromatic split at the rim
++    float shadow;      // soft drop shadow under the glass
++    float adaptiveBoost; // light mode: how hard dark backdrops are lifted (readability)
++    float highlightDirection; // where the rim catches light: 0 all round, 1 the top, 2 the top left
++    float darkEdge;      // alpha of the thin dark line inside the rim (0.88 dark mode, 0.43 light)
++    float nearReflection; // how much the rim takes its colour from just outside the glass
++};
++layout(binding = 1) uniform sampler2D mask;
++layout(binding = 2) uniform sampler2D field;
++layout(binding = 3) uniform sampler2D behind;
++
++const float CEILING = 0.30;
++const float FLOOR = 0.74;
++
++float luma(vec3 c) {
++    return dot(c, vec3(0.2126, 0.7152, 0.0722));
++}
++
++vec3 backdrop(vec2 uv, vec2 px) {
++    if (frost < 0.01)
++        return texture(behind, uv).rgb;
++    vec2 d = frost * px;
++    return (texture(behind, uv).rgb * 2.0
++          + texture(behind, uv + vec2(d.x, d.y)).rgb + texture(behind, uv + vec2(-d.x, d.y)).rgb
++          + texture(behind, uv + vec2(d.x, -d.y)).rgb + texture(behind, uv + vec2(-d.x, -d.y)).rgb) / 6.0;
++}
++
++void main() {
++    vec2 uv = qt_TexCoord0;
++    vec2 px = 1.0 / itemSize;
++
++    float coverage = texture(mask, uv).a;
++
++    // Outside the shape: only a soft shadow, which keeps the glass apart from what is behind
++    if (coverage < 0.002) {
++        float s = texture(field, uv - vec2(0.0, 3.0) * px).a;
++        fragColor = vec4(0.0, 0.0, 0.0, shadow * pow(clamp(s * 2.0, 0.0, 1.0), 1.6)) * qt_Opacity;
++        return;
++    }
++
++    // The crisp rim: where coverage falls off within one pixel
++    float n4 = min(min(texture(mask, uv + vec2(px.x, 0.0)).a, texture(mask, uv - vec2(px.x, 0.0)).a),
++                   min(texture(mask, uv + vec2(0.0, px.y)).a, texture(mask, uv - vec2(0.0, px.y)).a));
++    float line = clamp(coverage - n4, 0.0, 1.0);
++
++    // The bezel: the blurred shape is the glass's height. Its gradient points
++    // inward and is steepest at the edge, flat deep inside.
++    vec2 g = vec2(texture(field, uv + vec2(px.x, 0.0)).a - texture(field, uv - vec2(px.x, 0.0)).a,
++                  texture(field, uv + vec2(0.0, px.y)).a - texture(field, uv - vec2(0.0, px.y)).a) * 0.5;
++    float slope = clamp(length(g) * bezel * 2.5, 0.0, 1.0);
++    vec2 inward = length(g) > 1e-6 ? normalize(g) : vec2(0.0);
++
++    // Refraction: the rim shows what lies just outside it, squeezed in; the
++    // whole pane is a shallow magnifier
++    vec3 raw = backdrop(uv, px); // what is behind, before any toning
++
++    vec2 offset = -inward * pow(slope, 1.5) * refraction * px - (uv - 0.5) * bodyLens;
++    vec3 color = vec3(backdrop(uv + offset * (1.0 + dispersion), px).r,
++                      backdrop(uv + offset, px).g,
++                      backdrop(uv + offset * (1.0 - dispersion), px).b);
++
++    // Tone. Dark mode: smoked, with bright backdrops pulled down so white text
++    // on the glass stays readable. Light mode, the mirror: milky, with dark
++    // backdrops lifted toward a floor (white mixed in) so dark text stays readable.
++    float l = luma(color);
++    float toned = l - max(l - CEILING, 0.0) * adaptiveDim;
++    color *= brightness * (l > 1e-4 ? toned / l : 1.0);
++    if (adaptiveBoost > 0.001) {
++        float m = luma(color);
++        float lifted = m + max(FLOOR - m, 0.0) * adaptiveBoost;
++        color = mix(color, vec3(1.0), clamp((lifted - m) / max(1.0 - m, 1e-3), 0.0, 1.0));
++    }
++    color = mix(color, tint.rgb, tint.a);
++
++    // Light, as in hyprglass. The rim is lit most along the top (or from the
++    // top left), takes the colour of what is behind and near it, brightening
++    // over bright content and nearly vanishing over black (Tahoe's rim:
++    // 1.45 luma + 3 chroma + 0.05), with a thin dark line inside it that
++    // shows on the sides (iOS 27).
++    vec2 nOut = -inward;
++    float lobe = 1.0, sideOn = 1.0;
++    if (highlightDirection > 1.5) {
++        const vec2 L = vec2(-0.70710678, -0.70710678);
++        sideOn = abs(dot(nOut, vec2(-L.y, L.x)));
++        lobe = max(1.0 - sideOn, 0.15) * (dot(nOut, L) < 0.0 ? 0.6 : 1.0);
++    } else if (highlightDirection > 0.5) {
++        sideOn = abs(nOut.x);
++        lobe = max(1.0 - sideOn, 0.15) * (nOut.y > 0.0 ? 0.6 : 1.0);
++    }
++    if (darkEdge > 0.001) {
++        float dir = highlightDirection < 0.5 ? 1.0 : mix(1.0, sideOn, 0.77);
++        color *= 1.0 - darkEdge * line * dir;
++    }
++    vec3 envC = texture(behind, uv - inward * 5.0 * px).rgb;
++    float env = smoothstep(0.30, 0.95, luma(envC));
++    color += vec3(slope * slope * 0.06 * (0.3 + 0.7 * env) * lobe);
++    vec3 src = mix(raw, envC, nearReflection);
++    float srcL = luma(src);
++    vec3 rimC = max(vec3(1.45 * srcL + 0.05) + 3.0 * (src - vec3(srcL)), 0.0);
++    color = mix(color, rimC, clamp(line * rim * lobe, 0.0, 1.0));
++
++    fragColor = vec4(color * coverage, coverage) * qt_Opacity;
++}
+diff --git a/modules/common/shaders/liquidglass.frag.qsb b/modules/common/shaders/liquidglass.frag.qsb
+new file mode 100644
+index 0000000000000000000000000000000000000000..a242d3dbb821b95e2ab1108b3b8573d51912234e
+GIT binary patch
+literal 6315
+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
+
+literal 0
+HcmV?d00001
+
 diff --git a/modules/common/widgets/AndroidClock.qml b/modules/common/widgets/AndroidClock.qml
 new file mode 100644
 index 0000000..eb1c66a
@@ -389,69 +715,6 @@ index 0000000..5d2d179
 +        }
 +    }
 +}
-diff --git a/modules/common/widgets/FastBlurred.qml b/modules/common/widgets/FastBlurred.qml
-new file mode 100644
-index 0000000..03dd86c
---- /dev/null
-+++ b/modules/common/widgets/FastBlurred.qml
-@@ -0,0 +1,56 @@
-+import QtQuick
-+import Qt5Compat.GraphicalEffects
-+import qs.modules.common
-+
-+Item {
-+    id: root
-+    required property Item blurSource
-+    property real cardRadius: 30
-+    property color tint: "white"
-+    property real tintOpacity: 0.15
-+    property real blurRadius: Config.options.background.widgets.blurRadius ?? 32
-+    property real trackX: 0
-+    property real trackY: 0
-+
-+    readonly property real oversample: blurRadius * 1.5
-+
-+    layer.enabled: true
-+    layer.effect: OpacityMask {
-+        maskSource: Rectangle {
-+            width: root.width; height: root.height
-+            radius: root.cardRadius
-+        }
-+    }
-+
-+    FastBlur {
-+        id: blur
-+        x: -root.oversample
-+        y: -root.oversample
-+        width: root.width + root.oversample * 2
-+        height: root.height + root.oversample * 2
-+        radius: root.blurRadius
-+        visible: root.blurSource !== null
-+        source: root.blurSource ? shaderSource : null
-+
-+        ShaderEffectSource {
-+            id: shaderSource
-+            sourceItem: root.blurSource
-+            sourceRect: {
-+                var _fx = root.trackX
-+                var _fy = root.trackY
-+                if (!root.blurSource) return Qt.rect(0, 0, 0, 0)
-+                var pt = root.mapToItem(root.blurSource, -root.oversample, -root.oversample)
-+                return Qt.rect(pt.x, pt.y, blur.width, blur.height)
-+            }
-+            hideSource: false
-+            live: true
-+        }
-+    }
-+
-+    Rectangle {
-+        anchors.fill: parent
-+        radius: root.cardRadius
-+        color: root.tint
-+        opacity: root.tintOpacity
-+    }
-+}
-\ No newline at end of file
 diff --git a/modules/common/widgets/FlipCard.qml b/modules/common/widgets/FlipCard.qml
 new file mode 100644
 index 0000000..5048623
@@ -486,78 +749,133 @@ index 0000000..5048623
 +        }
 +    }
 +}
-diff --git a/modules/common/widgets/FrostedGlass.qml b/modules/common/widgets/FrostedGlass.qml
+diff --git a/modules/common/widgets/LiquidGlassEffect.qml b/modules/common/widgets/LiquidGlassEffect.qml
 new file mode 100644
-index 0000000..17561fe
+index 0000000..f745f25
 --- /dev/null
-+++ b/modules/common/widgets/FrostedGlass.qml
-@@ -0,0 +1,68 @@
++++ b/modules/common/widgets/LiquidGlassEffect.qml
+@@ -0,0 +1,123 @@
 +import QtQuick
-+import qs.modules.common
++import Qt5Compat.GraphicalEffects
 +
++/**
++ * Liquid glass drawn by the shell itself, for surfaces the compositor's glass
++ * plugin can't reach (the lock screen). The glass takes the shape of whatever
++ * is placed inside it (its alpha: a rounded rectangle, the clock's digits...)
++ * and refracts `backdrop`, an item behind it that the caller draws. Optics in
++ * ../shaders/liquidglass.frag, the same as the plugin's.
++ */
 +Item {
 +    id: root
-+    required property Item blurSource
-+    property real cardRadius: 30
-+    property real topLeftRadius: cardRadius
-+    property real topRightRadius: cardRadius
-+    property real bottomRightRadius: cardRadius
-+    property real bottomLeftRadius: cardRadius
-+    property color tint: "white"
-+    property real tintOpacity: 0
-+    readonly property string tintChoice: Config.options.background.widgets.glass.tint ?? "transparent"
-+    readonly property bool tintOverride: tintChoice !== "transparent"
-+    readonly property color washColor: tintOverride ? Appearance.getColorFromName(tintChoice) : tint
-+    readonly property real washOpacity: tintOverride ? Config.options.background.widgets.glass.tintStrength : tintOpacity
-+    readonly property real rimWidth: Config.options.background.widgets.glass.rimWidth
-+    readonly property real pull: Config.options.background.widgets.glass.pull
-+    readonly property real split: Config.options.background.widgets.glass.split
-+    readonly property real haze: Config.options.background.widgets.glass.haze
-+    readonly property real vividness: Config.options.background.widgets.glass.vividness
-+    readonly property real sheen: Config.options.background.widgets.glass.sheen
-+    property real flareLeft: 0
-+    property real flareRight: 0
-+    property real hangLeft: 0
-+    property real hangRight: 0
-+    property int edge: 0
-+    property real trackX: 0
-+    property real trackY: 0
++    required property Item backdrop
++    default property alias shapeData: shape.data // opaque wherever the glass is
++
++    property real bezel: 14
++    property real refraction: 18
++    property real bodyLens: 0.03
++    property real frost: 0.8
++    property real rim: 0.75
++    property real brightness: 0.8
++    property real adaptiveDim: 0.8   // dark mode: bright backdrops pulled down
++    property real adaptiveBoost: 0   // light mode: dark backdrops lifted (milky)
++    property color tint: Qt.rgba(0.04, 0.04, 0.05, 0.25)
++    property real dispersion: 0.35
++    property real shadow: 0.28
++    // The rim's light: 0 all round, 1 along the top, 2 from the top left; the
++    // dark line inside it (0.88 suits dark mode, 0.43 light); how much it takes
++    // the colour of what is just outside it. Plain values: the login screen
++    // uses this file without the shell's Config.
++    property int highlightDirection: 1
++    property real darkEdge: 0.88
++    property real nearReflection: 0.5
++    // Track both axes separately so diagonal movement cannot cancel an update.
++    property point mapPosition: Qt.point(0, 0)
++    property real mapScale: 1
++
++    readonly property real pad: Math.ceil(Math.max(root.bezel * 2 + 4, root.refraction + 8))
++
++    Item { // The shape, in a box padded for the rim, the refraction and the shadow
++        id: shapeBox
++        x: -root.pad
++        y: -root.pad
++        width: root.width + root.pad * 2
++        height: root.height + root.pad * 2
++        visible: false
++
++        Item {
++            id: shape
++            x: root.pad
++            y: root.pad
++            width: root.width
++            height: root.height
++        }
++    }
 +
 +    ShaderEffectSource {
-+        id: capture
-+        sourceItem: root.blurSource
-+        sourceRect: {
-+            var _fx = root.trackX
-+            var _fy = root.trackY
-+            if (!root.blurSource) return Qt.rect(0, 0, 0, 0)
-+            var pt = root.mapToItem(root.blurSource, 0, 0)
-+            return Qt.rect(pt.x, pt.y, root.width, root.height)
-+        }
-+        mipmap: true
-+        hideSource: false
-+        live: true
++        id: maskTexture
++        sourceItem: shapeBox
++        hideSource: true
 +        visible: false
 +    }
 +
++    GaussianBlur { // The glass's height: its shape, blurred over the bezel
++        id: fieldBlur
++        x: shapeBox.x
++        y: shapeBox.y
++        width: shapeBox.width
++        height: shapeBox.height
++        source: maskTexture
++        radius: root.bezel
++        samples: Math.min(Math.ceil(root.bezel) * 2 + 1, 41)
++        visible: false
++    }
++
++    ShaderEffectSource {
++        id: fieldTexture
++        sourceItem: fieldBlur
++        hideSource: true
++        visible: false
++    }
++
++    ShaderEffectSource { // What is behind, exactly where the box sits over it
++        id: behindTexture
++        sourceItem: root.backdrop
++        visible: false
++        sourceRect: {
++            root.mapPosition;
++            root.mapScale;
++            root.x;
++            root.y;
++            return root.mapToItem(root.backdrop, -root.pad, -root.pad, root.width + root.pad * 2, root.height + root.pad * 2);
++        }
++    }
++
 +    ShaderEffect {
-+        anchors.fill: parent
-+        visible: root.blurSource !== null && root.width > 0 && root.height > 0
++        x: shapeBox.x
++        y: shapeBox.y
++        width: shapeBox.width
++        height: shapeBox.height
 +
-+        property var backdrop: capture
-+        property vector2d size: Qt.vector2d(width, height)
-+        property vector4d radii: Qt.vector4d(root.topLeftRadius, root.topRightRadius, root.bottomRightRadius, root.bottomLeftRadius)
-+        property real rimWidth: root.rimWidth
-+        property real pull: root.pull
-+        property real split: root.split
-+        property real haze: root.haze
-+        property real vividness: root.vividness
-+        property real sheen: root.sheen
-+        property vector2d flares: Qt.vector2d(root.flareLeft, root.flareRight)
-+        property vector2d hangs: Qt.vector2d(root.hangLeft, root.hangRight)
-+        property real edge: root.edge
-+        property color wash: Qt.rgba(root.washColor.r, root.washColor.g, root.washColor.b, root.washOpacity)
++        property var mask: maskTexture
++        property var field: fieldTexture
++        property var behind: behindTexture
++        property size itemSize: Qt.size(width, height)
++        property real bezel: root.bezel
++        property real refraction: root.refraction
++        property real bodyLens: root.bodyLens
++        property real frost: root.frost
++        property real rim: root.rim
++        property real brightness: root.brightness
++        property real adaptiveDim: root.adaptiveDim
++        property real adaptiveBoost: root.adaptiveBoost
++        property vector4d tint: Qt.vector4d(root.tint.r, root.tint.g, root.tint.b, root.tint.a)
++        property real dispersion: root.dispersion
++        property real shadow: root.shadow
++        property real highlightDirection: root.highlightDirection
++        property real darkEdge: root.darkEdge
++        property real nearReflection: root.nearReflection
 +
-+        fragmentShader: Qt.resolvedUrl("shaders/liquidLens.frag.qsb")
++        fragmentShader: Qt.resolvedUrl("../shaders/liquidglass.frag.qsb")
 +    }
 +}
 diff --git a/modules/common/widgets/Lyrics.qml b/modules/common/widgets/Lyrics.qml
@@ -1545,53 +1863,75 @@ index 0000000..e5f42e9
 +
 +    onWheel: event => root.handleWheel(event)
 +}
+diff --git a/modules/common/widgets/WallpaperGlass.qml b/modules/common/widgets/WallpaperGlass.qml
+new file mode 100644
+index 0000000..1a60860
+--- /dev/null
++++ b/modules/common/widgets/WallpaperGlass.qml
+@@ -0,0 +1,29 @@
++import QtQuick
++import qs.modules.common
++
++// Nothing Liquid's shell-side glass for panes drawn on the wallpaper layer.
++LiquidGlassEffect {
++    id: root
++    readonly property bool light: !Appearance.m3colors.darkmode
++    readonly property var settings: Config.options.appearance.liquidGlass
++    property real radius: Appearance.rounding.verylarge
++
++    brightness: root.light ? 1.03 : 0.8
++    adaptiveDim: root.light ? 0 : 0.8
++    adaptiveBoost: root.light ? 0.85 : 0
++    tint: root.light ? Qt.rgba(0.98, 0.98, 0.99, 0.45) : Qt.rgba(0.04, 0.04, 0.05, 0.25)
++    shadow: root.light ? 0.2 : 0.28
++    refraction: 18 * root.settings.refraction
++    bodyLens: 0.03 * root.settings.refraction
++    rim: 0.75 * root.settings.edgeHighlight
++    frost: root.settings.mode === "tinted" ? 0.8 + root.settings.tintAmount : 0.8
++    highlightDirection: ({ "none": 0, "top": 1, "diagonal": 2 })[root.settings.highlights] ?? 1
++    darkEdge: root.settings.darkEdge ? (root.light ? 0.43 : 0.88) : 0
++    nearReflection: root.settings.nearReflection ? 0.5 : 0
++
++    Rectangle {
++        anchors.fill: parent
++        radius: root.radius
++        color: "white"
++    }
++}
 diff --git a/modules/common/widgets/WidgetCard.qml b/modules/common/widgets/WidgetCard.qml
 new file mode 100644
-index 0000000..2f96154
+index 0000000..9806380
 --- /dev/null
 +++ b/modules/common/widgets/WidgetCard.qml
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,30 @@
 +import QtQuick
 +import qs.modules.common
 +
 +Rectangle {
 +    id: root
 +    required property var widget
-+    property bool blurred: Config.options.background.widgets.blurWidgets
 +    property bool shadowed: Config.options.background.widgets.shadow
-+    property color tint: Appearance.colors.colLayer1
-+    property real tintOpacity: 0.55
 +    property bool glass: true
 +
 +    radius: Appearance.rounding?.verylarge ?? 30
-+    color: glass && Config.options.background.widgets.glass.enable ? "transparent" : Appearance.colors.colPrimaryContainer
++    color: glass && Appearance.liquidGlass ? "transparent" : Appearance.colors.colPrimaryContainer
 +
 +    StyledRectangularShadow {
 +        target: root
 +        z: -2
-+        visible: root.shadowed
++        visible: root.shadowed && !Appearance.liquidGlass
 +    }
 +
-+    FrostedGlass {
++    Loader {
 +        anchors.fill: parent
-+        blurSource: root.widget.wallpaperItem
-+        cardRadius: root.radius
-+        tint: Appearance.colors.colPrimaryContainer
-+        trackX: root.widget.x + root.x
-+        trackY: root.widget.y + root.y
-+        visible: root.glass && Config.options.background.widgets.glass.enable
-+    }
-+
-+    FastBlurred {
-+        anchors.fill: parent
-+        anchors.margins: root.blurred ? -1 : 0
-+        blurSource: root.widget.wallpaperItem
-+        cardRadius: root.radius + (root.blurred ? 1 : 0)
-+        tint: root.tint
-+        tintOpacity: root.tintOpacity
-+        trackX: root.widget.x + root.x
-+        trackY: root.widget.y + root.y
-+        visible: root.blurred && !(root.glass && Config.options.background.widgets.glass.enable)
++        active: root.glass && Appearance.liquidGlass
++        sourceComponent: WallpaperGlass {
++            backdrop: root.widget.wallpaperItem
++            radius: root.radius
++            mapPosition: Qt.point(root.widget.x + root.x - root.widget.wallpaperItem.x,
++                root.widget.y + root.y - root.widget.wallpaperItem.y)
++            mapScale: root.widget.scale
++        }
 +    }
 +}
 diff --git a/modules/common/widgets/WidgetFlipHandle.qml b/modules/common/widgets/WidgetFlipHandle.qml
@@ -1668,440 +2008,6 @@ index 0000000..3ffb8fa
 +        }
 +    }
 +}
-diff --git a/modules/common/widgets/shaders/liquidLens.frag b/modules/common/widgets/shaders/liquidLens.frag
-new file mode 100644
-index 0000000..4a12c34
---- /dev/null
-+++ b/modules/common/widgets/shaders/liquidLens.frag
-@@ -0,0 +1,159 @@
-+#version 440
-+
-+layout(location = 0) in vec2 qt_TexCoord0;
-+layout(location = 0) out vec4 fragColor;
-+
-+layout(std140, binding = 0) uniform buf {
-+    mat4 qt_Matrix;
-+    vec4 radii;
-+    vec4 wash;
-+    float qt_Opacity;
-+    vec2 size;
-+    float rimWidth;
-+    float pull;
-+    float split;
-+    float haze;
-+    float vividness;
-+    float sheen;
-+    vec2 flares;
-+    vec2 hangs;
-+    float edge;
-+};
-+
-+layout(binding = 1) uniform sampler2D backdrop;
-+
-+float roundedDist(vec2 p, vec2 half_, vec4 radii) {
-+    float r = p.x > 0.0 ? (p.y > 0.0 ? radii.z : radii.y) : (p.y > 0.0 ? radii.w : radii.x);
-+    r = min(r, min(half_.x, half_.y));
-+    vec2 q = abs(p) - half_ + r;
-+    return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
-+}
-+
-+float boxDist(vec2 p, vec2 half_) {
-+    vec2 q = abs(p) - half_;
-+    return min(max(q.x, q.y), 0.0) + length(max(q, vec2(0.0)));
-+}
-+
-+float filletDist(vec2 p, float s, vec2 center, vec2 boxCenter, vec2 boxHalf) {
-+    return max(boxDist(p - boxCenter, boxHalf), -(length(p - center) - s));
-+}
-+
-+float shapeDist(vec2 p) {
-+    vec2 q = p + size * 0.5;
-+    float hang = max(hangs.x, hangs.y);
-+    bool vert = edge > 1.5;
-+    float along = vert ? size.y : size.x;
-+    float depth = (vert ? size.x : size.y) - hang;
-+
-+    float u = vert ? q.y : q.x;
-+    float v = edge < 0.5 ? q.y : edge < 1.5 ? size.y - q.y : edge < 2.5 ? q.x : size.x - q.x;
-+
-+    vec2 lo = edge < 0.5 ? vec2(flares.x, 0.0)
-+        : edge < 1.5 ? vec2(flares.x, size.y - depth)
-+        : edge < 2.5 ? vec2(0.0, flares.x)
-+        : vec2(size.x - depth, flares.x);
-+    vec2 hi = edge < 0.5 ? vec2(along - flares.y, depth)
-+        : edge < 1.5 ? vec2(along - flares.y, size.y)
-+        : edge < 2.5 ? vec2(depth, along - flares.y)
-+        : vec2(size.x, along - flares.y);
-+    float d = roundedDist(q - (lo + hi) * 0.5, (hi - lo) * 0.5, radii);
-+
-+    if (flares.x > 0.0) d = min(d, filletDist(vec2(u, v), flares.x, vec2(0.0, flares.x), vec2(flares.x, flares.x * 0.5), vec2(flares.x, flares.x * 0.5)));
-+    if (flares.y > 0.0) d = min(d, filletDist(vec2(along - u, v), flares.y, vec2(0.0, flares.y), vec2(flares.y, flares.y * 0.5), vec2(flares.y, flares.y * 0.5)));
-+    if (hangs.x > 0.0) d = min(d, filletDist(vec2(u, v - depth), hangs.x, vec2(hangs.x), vec2(hangs.x * 0.5, 0.0), vec2(hangs.x * 0.5, hangs.x)));
-+    if (hangs.y > 0.0) d = min(d, filletDist(vec2(along - u, v - depth), hangs.y, vec2(hangs.y), vec2(hangs.y * 0.5, 0.0), vec2(hangs.y * 0.5, hangs.y)));
-+    return d;
-+}
-+
-+const float GLASS_IOR = 1.5;
-+const vec2 LIGHT = vec2(-0.6, -0.8);
-+
-+vec3 backdropAt(vec2 px, float lod) {
-+    vec2 uv = clamp((px + size * 0.5) / size, vec2(0.002), vec2(0.998));
-+    return textureLod(backdrop, uv, lod).rgb;
-+}
-+
-+vec3 diffuseAt(vec2 px, float lod, float reach) {
-+    vec3 acc = backdropAt(px, lod) * 2.0;
-+    for (int i = 0; i < 6; ++i) {
-+        float a = 1.0471976 * float(i) + 0.3;
-+        acc += backdropAt(px + vec2(cos(a), sin(a)) * reach, lod);
-+    }
-+    return acc / 8.0;
-+}
-+
-+float domeHeight(float u) {
-+    float v = 1.0 - u;
-+    return sqrt(max(1.0 - v * v, 0.0));
-+}
-+
-+float domeSlope(float u) {
-+    float v = 1.0 - u;
-+    return min(v / max(sqrt(max(1.0 - v * v, 0.0)), 0.12), 5.0);
-+}
-+
-+vec2 bendRay(vec2 outward, float slope, float ior, float travel) {
-+    vec3 normal = normalize(vec3(outward * slope, 1.0));
-+    vec3 ray = refract(vec3(0.0, 0.0, -1.0), normal, 1.0 / ior);
-+    return ray.xy / max(-ray.z, 0.25) * travel;
-+}
-+
-+void main() {
-+    vec2 p = qt_TexCoord0 * size - size * 0.5;
-+    float d = shapeDist(p);
-+    float cover = clamp(0.5 - d, 0.0, 1.0);
-+    if (cover <= 0.0) {
-+        fragColor = vec4(0.0);
-+        return;
-+    }
-+
-+    float depth = max(-d, 0.0);
-+    vec2 e = vec2(0.8, 0.0);
-+    vec2 outward = vec2(
-+        shapeDist(p + e.xy) - shapeDist(p - e.xy),
-+        shapeDist(p + e.yx) - shapeDist(p - e.yx));
-+    outward = length(outward) > 1e-4 ? normalize(outward) : vec2(0.0, -1.0);
-+
-+    float bezel = max(rimWidth, 1.0);
-+    float u = clamp(depth / bezel, 0.0, 1.0);
-+    float slope = domeSlope(u);
-+    float fall = (1.0 - u) * (1.0 - u);
-+
-+    float spreadK = split * (0.4 + 1.4 * fall);
-+    vec2 shiftG = bendRay(outward, slope, GLASS_IOR, pull);
-+    vec2 shiftR = bendRay(outward, slope, GLASS_IOR - spreadK, pull);
-+    vec2 shiftB = bendRay(outward, slope, GLASS_IOR + spreadK, pull);
-+
-+    float lod = log2(max(haze, 1.0));
-+    float reach = haze * 0.6;
-+    vec3 col;
-+    col.r = diffuseAt(p + shiftR, lod, reach).r;
-+    col.g = diffuseAt(p + shiftG, lod, reach).g;
-+    col.b = diffuseAt(p + shiftB, lod, reach).b;
-+
-+    float lum = dot(col, vec3(0.299, 0.587, 0.114));
-+    col = mix(vec3(lum), col, vividness);
-+
-+    vec2 L = normalize(LIGHT);
-+    float facing = dot(outward, L);
-+    float lit = pow(max(facing, 0.0), 1.6);
-+    float away = pow(max(-facing, 0.0), 2.2);
-+
-+    float hair = exp(-depth / 1.0);
-+    float wide = exp(-depth / (bezel * 0.5));
-+    float rimLight = (hair * (0.2 + 0.75 * lit + 0.25 * away) + wide * 0.14 * lit) * sheen;
-+
-+    float rimEnv = pow(1.0 - clamp(u, 0.0, 1.0), 2.0);
-+    vec3 env = backdropAt(p + outward * bezel * 1.2, min(lod + 2.0, 6.0));
-+    col = mix(col, env * 1.1 + 0.03, clamp(rimEnv * 0.35 * (0.4 + 0.6 * lit), 0.0, 0.5));
-+
-+    col *= 1.0 - 0.14 * wide * away;
-+
-+    float top = 1.0 - smoothstep(0.0, size.y * 0.55, p.y + size.y * 0.5);
-+    col += vec3(0.03 * top * sheen);
-+
-+    col = mix(col, wash.rgb, wash.a);
-+    col += vec3(rimLight);
-+
-+    fragColor = vec4(clamp(col, 0.0, 1.0) * cover, cover) * qt_Opacity;
-+}
-diff --git a/modules/common/widgets/shaders/liquidLens.frag.qsb b/modules/common/widgets/shaders/liquidLens.frag.qsb
-new file mode 100644
-index 0000000000000000000000000000000000000000..f5b1ce8973cd045365bb46269e54cefb976d1b3c
-GIT binary patch
-literal 12861
-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
-R+Ja4S$AA8`-#1z48URg?)BFGc
-
-literal 0
-HcmV?d00001
-
 diff --git a/modules/ii/background/Background.qml b/modules/ii/background/Background.qml
 index 7841fe1..9501336 100644
 --- a/modules/ii/background/Background.qml
@@ -3988,10 +3894,10 @@ index 0000000..aa1f30f
 +}
 diff --git a/modules/ii/background/widgets/worldclock/WorldClockWidget.qml b/modules/ii/background/widgets/worldclock/WorldClockWidget.qml
 new file mode 100644
-index 0000000..49ae061
+index 0000000..a47d56c
 --- /dev/null
 +++ b/modules/ii/background/widgets/worldclock/WorldClockWidget.qml
-@@ -0,0 +1,388 @@
+@@ -0,0 +1,355 @@
 +import QtQuick
 +import QtQuick.Layouts
 +import qs
@@ -4047,9 +3953,8 @@ index 0000000..49ae061
 +            id: contentRect
 +            anchors.fill: parent
 +            widget: root
-+            color: sizeMode === "4x1" ? "transparent" : Appearance.colors.colPrimaryContainer
++            color: sizeMode === "4x1" || Appearance.liquidGlass ? "transparent" : Appearance.colors.colPrimaryContainer
 +            shadowed: sizeMode !== "4x1" && Config.options.background.widgets.shadow
-+            blurred: Config.options.background.widgets.blurWidgets && sizeMode === "2x2"
 +            glass: sizeMode !== "4x1"
 +
 +            // 2x2
@@ -4279,56 +4184,24 @@ index 0000000..49ae061
 +
 +                Repeater {
 +                    model: Math.min(root.worldCities.length, root.clockCount)
-+                    delegate: Item {
++                    delegate: WidgetCard {
 +                        id: clockWrapper
 +                        required property int index
 +                        property var cityData: root.worldCities[index] ?? null
-+                        readonly property bool glassOn: Config.options.background.widgets.glass.enable
++                        widget: root
++                        color: Appearance.liquidGlass ? "transparent"
++                            : ((clockWrapper.cityData?.isDay ?? true) ? Appearance.colors.colPrimary : Appearance.colors.colPrimaryContainer)
 +
 +                        Layout.preferredWidth: 132
 +                        Layout.preferredHeight: 120
 +
-+                        StyledRectangularShadow {
-+                            target: androidClock
-+                            z: -2
-+                            visible: Config.options.background.widgets.shadow
-+                        }
-+
-+                        FrostedGlass {
-+                            anchors.fill: parent
-+                            blurSource: root.wallpaperItem
-+                            cardRadius: Appearance.rounding?.verylarge ?? 30
-+                            tint: (clockWrapper.cityData?.isDay ?? true)
-+                                ? Appearance.colors.colPrimary
-+                                : Appearance.colors.colLayer1
-+                            trackX: root.x + clockWrapper.x
-+                            trackY: root.y + clockWrapper.y
-+                            visible: clockWrapper.glassOn
-+                        }
-+
-+                        FastBlurred {
-+                            anchors.fill: parent
-+                            visible: Config.options.background.widgets.blurWidgets && !clockWrapper.glassOn
-+                            blurSource: root.wallpaperItem
-+                            cardRadius: Appearance.rounding?.verylarge ?? 30
-+                            tint: (clockWrapper.cityData?.isDay ?? true)
-+                                ? Appearance.colors.colPrimary
-+                                : Appearance.colors.colLayer1
-+                            tintOpacity: 0.55
-+                            trackX: root.x
-+                            trackY: root.y
-+                        }
 +
 +                        AndroidClock {
 +                            id: androidClock
 +                            anchors.fill: parent
 +                            radius: Appearance.rounding?.verylarge ?? 30
 +
-+                            backgroundColor: Config.options.background.widgets.blurWidgets || clockWrapper.glassOn
-+                                ? "transparent"
-+                                : ((clockWrapper.cityData?.isDay ?? true)
-+                                    ? Appearance.colors.colPrimary
-+                                    : Appearance.colors.colPrimaryContainer)
++                            backgroundColor: "transparent"
 +                            handColor: (clockWrapper.cityData?.isDay ?? true)
 +                                ? Appearance.colors.colOnPrimary
 +                                : Appearance.colors.colOnLayer0
@@ -4381,9 +4254,18 @@ index 0000000..49ae061
 +    }
 +}
 diff --git a/modules/ii/bar/BarContent.qml b/modules/ii/bar/BarContent.qml
-index 3bec758..183d0e1 100644
+index 3bec758..29692b2 100644
 --- a/modules/ii/bar/BarContent.qml
 +++ b/modules/ii/bar/BarContent.qml
+@@ -41,7 +41,7 @@ Item { // Bar content region
+             fill: parent
+             margins: Config.options.bar.cornerStyle === 1 ? (Appearance.sizes.hyprlandGapsOut) : 0 // idk why but +1 is needed
+         }
+-        color: Config.options.bar.showBackground ? Appearance.colors.colLayer0 : "transparent"
++        color: Config.options.bar.showBackground && !Appearance.liquidCapsuleBar ? Appearance.colors.colLayer0 : "transparent"
+         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
+         border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
+         border.color: Appearance.colors.colLayer0Border
 @@ -131,7 +131,6 @@ Item { // Bar content region
          BarGroup {
              id: middleCenterGroup
@@ -4416,6 +4298,32 @@ index 3bec758..183d0e1 100644
              SysTray {
                  visible: root.useShortenedForm === 0
                  Layout.fillWidth: false
+diff --git a/modules/ii/bar/BarGroup.qml b/modules/ii/bar/BarGroup.qml
+index 35769e4..745c7a0 100644
+--- a/modules/ii/bar/BarGroup.qml
++++ b/modules/ii/bar/BarGroup.qml
+@@ -20,7 +20,7 @@ Item {
+             rightMargin: root.vertical ? 4 : 0
+         }
+         color: Config.options?.bar.borderless ? "transparent" : Appearance.colors.colLayer1
+-        radius: Appearance.rounding.small
++        radius: Appearance.liquidCapsuleBar ? height / 2 : Appearance.rounding.small
+     }
+ 
+     GridLayout {
+diff --git a/modules/ii/bar/LeftSidebarButton.qml b/modules/ii/bar/LeftSidebarButton.qml
+index 6c73ca7..b78baed 100644
+--- a/modules/ii/bar/LeftSidebarButton.qml
++++ b/modules/ii/bar/LeftSidebarButton.qml
+@@ -59,7 +59,7 @@ RippleButton {
+         height: 19.5
+         source: Config.options.bar.topLeftIcon == 'distro' ? SystemInfo.distroIcon : `${Config.options.bar.topLeftIcon}-symbolic`
+         colorize: true
+-        color: Appearance.colors.colOnLayer0
++        color: Appearance.hasAccent ? Appearance.accent : Appearance.colors.colOnLayer0
+ 
+         Rectangle {
+             opacity: root.showPing ? 1 : 0
 diff --git a/modules/ii/bar/UtilButtons.qml b/modules/ii/bar/UtilButtons.qml
 index 615ed65..18e65b6 100644
 --- a/modules/ii/bar/UtilButtons.qml
@@ -4451,6 +4359,28 @@ index 615ed65..18e65b6 100644
 +        }
      }
  }
+diff --git a/modules/ii/bar/Workspaces.qml b/modules/ii/bar/Workspaces.qml
+index 34b2c57..f6be16e 100644
+--- a/modules/ii/bar/Workspaces.qml
++++ b/modules/ii/bar/Workspaces.qml
+@@ -196,7 +196,7 @@ ButtonMouseArea {
+         Colorizer {
+             z: 5
+             anchors.fill: numbersGrid
+-            colorizationColor: Appearance.colors.colOnPrimary
++            colorizationColor: Appearance.colOnAccent
+             sourceColor: Appearance.colors.colOnSecondaryContainer
+ 
+             source: activeIndicator
+@@ -430,7 +430,7 @@ ButtonMouseArea {
+ 
+             contentLayer: StyledRectangle.ContentLayer.Group
+             radius: indicatorThickness / 2
+-            color: Appearance.colors.colPrimary
++            color: Appearance.hasAccent ? Appearance.accent : Appearance.colors.colPrimary
+ 
+             x: root.vertical ? null : indicatorPosition
+             y: root.vertical ? indicatorPosition : null
 diff --git a/modules/ii/lock/LockSurface.qml b/modules/ii/lock/LockSurface.qml
 index 4eb709c..de3335f 100644
 --- a/modules/ii/lock/LockSurface.qml
@@ -4722,6 +4652,21 @@ index 0153505..3865f15 100644
                  }
              }
          }
+diff --git a/modules/ii/sidebarRight/SidebarRightContent.qml b/modules/ii/sidebarRight/SidebarRightContent.qml
+index 412912e..9ca3fe2 100644
+--- a/modules/ii/sidebarRight/SidebarRightContent.qml
++++ b/modules/ii/sidebarRight/SidebarRightContent.qml
+@@ -53,8 +53,8 @@ Item {
+         anchors.fill: parent
+         implicitHeight: parent.height - Appearance.sizes.hyprlandGapsOut * 2
+         implicitWidth: sidebarWidth - Appearance.sizes.hyprlandGapsOut * 2
+-        color: Appearance.colors.colLayer0
+-        border.width: 1
++        color: Appearance.liquidModularSidebar ? "transparent" : Appearance.colors.colLayer0
++        border.width: Appearance.liquidModularSidebar ? 0 : 1
+         border.color: Appearance.colors.colLayer0Border
+         radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
+ 
 diff --git a/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml b/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
 index 8457b3c..0d39186 100644
 --- a/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
@@ -4804,6 +4749,311 @@ index de544ed..5420c8f 100644
                  }
              }
          }
+diff --git a/modules/settings/LiquidGlassConfig.qml b/modules/settings/LiquidGlassConfig.qml
+new file mode 100644
+index 0000000..4b423cb
+--- /dev/null
++++ b/modules/settings/LiquidGlassConfig.qml
+@@ -0,0 +1,286 @@
++import QtQuick
++import QtQuick.Layouts
++import qs.services
++import qs.modules.common
++import qs.modules.common.widgets
++import qs.modules.common.functions
++
++ContentSection {
++    icon: "water_drop"
++    title: Translation.tr("Liquid glass")
++
++    ConfigSwitch {
++        buttonIcon: "blur_on"
++        text: Translation.tr("Liquid glass")
++        checked: Config.options.appearance.liquidGlass.enable
++        onCheckedChanged: {
++            Config.options.appearance.liquidGlass.enable = checked;
++        }
++        StyledToolTip {
++            text: Translation.tr("Glass windows, bar, dock and panels, drawn by the compositor")
++        }
++    }
++
++    ContentSubsection {
++        visible: Config.options.appearance.liquidGlass.enable
++        title: Translation.tr("Look")
++
++        ConfigSelectionArray {
++            currentValue: Config.options.appearance.liquidGlass.mode
++            onSelected: newValue => {
++                Config.options.appearance.liquidGlass.mode = newValue;
++            }
++            options: [
++                {
++                    displayName: Translation.tr("Clear"),
++                    icon: "lens_blur",
++                    value: "clear"
++                },
++                {
++                    displayName: Translation.tr("Tinted"),
++                    icon: "contrast",
++                    value: "tinted"
++                }
++            ]
++        }
++    }
++
++    ConfigSlider {
++        visible: Config.options.appearance.liquidGlass.enable && Config.options.appearance.liquidGlass.mode === "tinted"
++        text: Translation.tr("Tint")
++        buttonIcon: "opacity"
++        from: 0.1
++        to: 1
++        value: Config.options.appearance.liquidGlass.tintAmount
++        onValueChanged: {
++            Config.options.appearance.liquidGlass.tintAmount = value;
++        }
++    }
++
++    ConfigSlider {
++        visible: Config.options.appearance.liquidGlass.enable
++        text: Translation.tr("Edge highlights")
++        buttonIcon: "highlight"
++        from: 0
++        to: 2
++        stopIndicatorValues: [1]
++        value: Config.options.appearance.liquidGlass.edgeHighlight
++        onValueChanged: {
++            Config.options.appearance.liquidGlass.edgeHighlight = value;
++        }
++    }
++
++    ConfigSlider {
++        visible: Config.options.appearance.liquidGlass.enable
++        text: Translation.tr("Refraction")
++        buttonIcon: "lens"
++        from: 0
++        to: 2
++        stopIndicatorValues: [1]
++        value: Config.options.appearance.liquidGlass.refraction
++        onValueChanged: {
++            Config.options.appearance.liquidGlass.refraction = value;
++        }
++    }
++
++    ContentSubsection {
++        visible: Config.options.appearance.liquidGlass.enable
++        title: Translation.tr("Click glow")
++        tooltip: Translation.tr("Light where glass is clicked or touched. Subtle is Apple's current look, Bright its first one")
++
++        ConfigSelectionArray {
++            currentValue: Config.options.appearance.liquidGlass.pressGlow
++            onSelected: newValue => {
++                Config.options.appearance.liquidGlass.pressGlow = newValue;
++            }
++            options: [
++                {
++                    displayName: Translation.tr("Off"),
++                    icon: "block",
++                    value: "off"
++                },
++                {
++                    displayName: Translation.tr("Subtle"),
++                    icon: "touch_app",
++                    value: "subtle"
++                },
++                {
++                    displayName: Translation.tr("Bright"),
++                    icon: "flare",
++                    value: "bright"
++                }
++            ]
++        }
++    }
++
++    ContentSubsection {
++        visible: Config.options.appearance.liquidGlass.enable
++        title: Translation.tr("Highlights")
++        tooltip: Translation.tr("Where the rim of the glass catches light")
++
++        ConfigSelectionArray {
++            currentValue: Config.options.appearance.liquidGlass.highlights
++            onSelected: newValue => {
++                Config.options.appearance.liquidGlass.highlights = newValue;
++            }
++            options: [
++                {
++                    displayName: Translation.tr("All round"),
++                    icon: "crop_square",
++                    value: "none"
++                },
++                {
++                    displayName: Translation.tr("Top"),
++                    icon: "border_top",
++                    value: "top"
++                },
++                {
++                    displayName: Translation.tr("Diagonal"),
++                    icon: "north_west",
++                    value: "diagonal"
++                }
++            ]
++        }
++    }
++
++    ConfigRow {
++        visible: Config.options.appearance.liquidGlass.enable
++        uniform: true
++        ConfigSwitch {
++            enabled: Config.options.appearance.liquidGlass.pressGlow !== "off"
++            buttonIcon: "blur_circular"
++            text: Translation.tr("Glow spreads")
++            checked: Config.options.appearance.liquidGlass.glowSpread
++            onCheckedChanged: {
++                Config.options.appearance.liquidGlass.glowSpread = checked;
++            }
++            StyledToolTip {
++                text: Translation.tr("The click glow also lights nearby glass: other windows, the bar, the dock")
++            }
++        }
++        ConfigSwitch {
++            buttonIcon: "line_style"
++            text: Translation.tr("Dark edge")
++            checked: Config.options.appearance.liquidGlass.darkEdge
++            onCheckedChanged: {
++                Config.options.appearance.liquidGlass.darkEdge = checked;
++            }
++            StyledToolTip {
++                text: Translation.tr("A thin dark line inside the rim, so glass stands out over bright content")
++            }
++        }
++        ConfigSwitch {
++            buttonIcon: "palette"
++            text: Translation.tr("Nearby colour")
++            checked: Config.options.appearance.liquidGlass.nearReflection
++            onCheckedChanged: {
++                Config.options.appearance.liquidGlass.nearReflection = checked;
++            }
++            StyledToolTip {
++                text: Translation.tr("Rims pick up the colour of what is near them, not only of what is behind")
++            }
++        }
++    }
++
++    ConfigRow {
++        visible: Config.options.appearance.liquidGlass.enable
++        uniform: true
++        ConfigSwitch {
++            buttonIcon: "toolbar"
++            text: Translation.tr("Capsule bar")
++            checked: Config.options.appearance.liquidGlass.capsuleBar
++            onCheckedChanged: {
++                Config.options.appearance.liquidGlass.capsuleBar = checked;
++            }
++            StyledToolTip {
++                text: Translation.tr("Each bar group is its own glass capsule. Off: one glass bar with a single border")
++            }
++        }
++        ConfigSwitch {
++            buttonIcon: "view_agenda"
++            text: Translation.tr("Modular sidebar")
++            checked: Config.options.appearance.liquidGlass.modularSidebar
++            onCheckedChanged: {
++                Config.options.appearance.liquidGlass.modularSidebar = checked;
++            }
++            StyledToolTip {
++                text: Translation.tr("Each card of the right sidebar is its own glass, like Control Center")
++            }
++        }
++    }
++
++    ContentSubsection {
++        id: accentPicker
++        title: Translation.tr("Accent colour")
++        tooltip: Translation.tr("The active workspace and the bar's glyph. None: the theme's own colours")
++        readonly property string current: Config.options.appearance.liquidGlass.accentColor
++        readonly property var swatches: [
++            { name: Translation.tr("Nothing red"), color: "#D71921" },
++            { name: Translation.tr("Orange"), color: "#FF6A13" },
++            { name: Translation.tr("Yellow"), color: "#F5C400" },
++            { name: Translation.tr("Green"), color: "#2DBE6C" },
++            { name: Translation.tr("Teal"), color: "#13B5B1" },
++            { name: Translation.tr("Blue"), color: "#2F7CF6" },
++            { name: Translation.tr("Purple"), color: "#9B5CF6" },
++            { name: Translation.tr("Pink"), color: "#F0508C" },
++            { name: Translation.tr("White"), color: "#F2F2F2" }
++        ]
++
++        RowLayout {
++            spacing: 8
++            Repeater {
++                model: accentPicker.swatches
++                delegate: RippleButton {
++                    id: swatch
++                    required property var modelData
++                    implicitWidth: 32
++                    implicitHeight: 32
++                    buttonRadius: 16
++                    readonly property bool chosen: accentPicker.current.toLowerCase() === modelData.color.toLowerCase()
++                    colBackground: modelData.color
++                    colBackgroundHover: modelData.color
++                    colRipple: ColorUtils.mix(modelData.color, "#ffffff", 0.7)
++                    onClicked: Config.options.appearance.liquidGlass.accentColor = modelData.color
++                    contentItem: MaterialSymbol {
++                        anchors.centerIn: parent
++                        horizontalAlignment: Text.AlignHCenter
++                        text: swatch.chosen ? "check" : ""
++                        iconSize: 18
++                        color: ColorUtils.mix(swatch.modelData.color, "#000000", 0.75)
++                    }
++                    StyledToolTip {
++                        text: swatch.modelData.name
++                    }
++                }
++            }
++            RippleButton {
++                id: noAccent
++                implicitHeight: 32
++                buttonRadius: 16
++                toggled: accentPicker.current === ""
++                colBackground: Appearance.colors.colLayer2
++                onClicked: Config.options.appearance.liquidGlass.accentColor = ""
++                contentItem: StyledText {
++                    horizontalAlignment: Text.AlignHCenter
++                    leftPadding: 10
++                    rightPadding: 10
++                    text: Translation.tr("None")
++                    color: noAccent.toggled ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer2
++                }
++            }
++        }
++
++        MaterialTextField {
++            Layout.fillWidth: true
++            placeholderText: Translation.tr("Custom colour, e.g. #D71921")
++            text: accentPicker.current
++            onEditingFinished: {
++                const t = text.trim();
++                if (t === "")
++                    Config.options.appearance.liquidGlass.accentColor = "";
++                else if (/^#?[0-9a-fA-F]{6}$/.test(t))
++                    Config.options.appearance.liquidGlass.accentColor = t.startsWith("#") ? t.toUpperCase() : "#" + t.toUpperCase();
++            }
++        }
++    }
++}
+diff --git a/modules/settings/QuickConfig.qml b/modules/settings/QuickConfig.qml
+index 75d956a..d806d0b 100644
+--- a/modules/settings/QuickConfig.qml
++++ b/modules/settings/QuickConfig.qml
+@@ -226,6 +226,8 @@ ContentPage {
+         }
+     }
+ 
++    LiquidGlassConfig {}
++
+     ContentSection {
+         icon: "screenshot_monitor"
+         title: Translation.tr("Bar & screen")
 diff --git a/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml b/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml
 index e42f735..e57b810 100644
 --- a/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml
@@ -5214,6 +5464,79 @@ index 68ebc3a..3230062 100644
      }
  
      function setDefaultSink(node) {
+diff --git a/services/LiquidGlass.qml b/services/LiquidGlass.qml
+new file mode 100644
+index 0000000..3f83582
+--- /dev/null
++++ b/services/LiquidGlass.qml
+@@ -0,0 +1,67 @@
++pragma Singleton
++pragma ComponentBehavior: Bound
++
++import qs.modules.common
++import qs.modules.common.functions
++import QtQuick
++import Quickshell
++import Quickshell.Io
++
++/**
++ * Hands the Liquid Glass settings (on/off, Clear / Tinted, edge highlights,
++ * click glow, rim light) and the light or dark mode to the compositor's glass plugin: right away
++ * through hyprctl, and for every later Hyprland start or config reload through
++ * a small Lua file that hypr/hyprland/liquidglass.lua reads.
++ */
++Singleton {
++    id: root
++
++    readonly property var settings: Config.options.appearance.liquidGlass
++    readonly property bool enabled: settings.enable
++    readonly property real tinted: settings.mode === "tinted" ? Math.max(0, Math.min(1, settings.tintAmount)) : 0
++    readonly property real edgeHighlight: Math.max(0, settings.edgeHighlight)
++    readonly property real lens: Math.max(0, settings.refraction)
++    readonly property int pressGlow: ({ "off": 0, "subtle": 1, "bright": 2 })[settings.pressGlow] ?? 1
++    readonly property real pressSpill: settings.glowSpread ? 0.5 : 0
++    readonly property int highlightDirection: ({ "none": 0, "top": 1, "diagonal": 2 })[settings.highlights] ?? 1
++    readonly property real darkEdge: settings.darkEdge ? 1 : 0
++    readonly property real nearReflection: settings.nearReflection ? 0.5 : 0
++    // The glass follows the colour scheme: smoked in dark mode, milky in light
++    readonly property string theme: Appearance.m3colors.darkmode ? "dark" : "light"
++    readonly property string statePath: FileUtils.trimFileProtocol(`${Directories.state}/user/generated/liquidglass.lua`)
++
++    // Called once at startup (shell.qml), which also brings the singleton up.
++    function load() {
++        applyTimer.restart();
++    }
++
++    onEnabledChanged: applyTimer.restart()
++    onTintedChanged: applyTimer.restart()
++    onEdgeHighlightChanged: applyTimer.restart()
++    onLensChanged: applyTimer.restart()
++    onPressGlowChanged: applyTimer.restart()
++    onPressSpillChanged: applyTimer.restart()
++    onHighlightDirectionChanged: applyTimer.restart()
++    onDarkEdgeChanged: applyTimer.restart()
++    onNearReflectionChanged: applyTimer.restart()
++    onThemeChanged: applyTimer.restart()
++
++    Timer { // a slider drag sends one update, not dozens
++        id: applyTimer
++        interval: 120
++        onTriggered: root.apply()
++    }
++
++    function apply() {
++        const on = root.enabled ? "true" : "false";
++        const fields = `enabled = ${on}, layers = { enabled = ${on} }, tinted = ${root.tinted.toFixed(3)}, edge_highlight = ${root.edgeHighlight.toFixed(3)}, lens = ${root.lens.toFixed(3)}, press_glow = ${root.pressGlow}, press_spill = ${root.pressSpill}, highlight_direction = ${root.highlightDirection}, dark_edge = ${root.darkEdge}, near_reflection = ${root.nearReflection}, default_theme = "${root.theme}"`;
++        stateFile.setText(`-- written by the shell (Settings > Liquid glass); read by hypr/hyprland/liquidglass.lua\nreturn { ${fields} }\n`);
++        Quickshell.execDetached(["hyprctl", "eval", `if hl.plugin.hyprglass then hl.plugin.hyprglass.config({ ${fields} }) end`]);
++    }
++
++    FileView {
++        id: stateFile
++        path: root.statePath
++        printErrors: false // it does not exist until the first apply()
++    }
++}
 diff --git a/services/LyricsService.qml b/services/LyricsService.qml
 new file mode 100644
 index 0000000..1b52115
@@ -5671,3 +5994,27 @@ index 0000000..2ce3206
 +        isDay: root.isDaytimeFor(i)
 +    }))
 +}
+diff --git a/settings.qml b/settings.qml
+index 65c64c1..5cec268 100644
+--- a/settings.qml
++++ b/settings.qml
+@@ -15,6 +15,7 @@ import qs.services
+ import qs.modules.common
+ import qs.modules.common.widgets
+ import qs.modules.common.functions as CF
++import qs.modules.settings
+ 
+ ApplicationWindow {
+     id: root
+diff --git a/shell.qml b/shell.qml
+index 13cf7af..0cd1a98 100644
+--- a/shell.qml
++++ b/shell.qml
+@@ -30,6 +30,7 @@ ShellRoot {
+         Cliphist.refresh()
+         Wallpapers.load()
+         Updates.load()
++        LiquidGlass.load()
+     }
+ 
+ 

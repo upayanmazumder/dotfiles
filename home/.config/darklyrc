@@ -1,0 +1,15 @@
+[Style]
+WidgetDrawShadow=false
+
+# Nothing Liquid: translucent chrome, so the compositor's liquid glass shows
+# through toolbars, menus, tab bars and Dolphin's sidebar and file view
+# (the content of other apps stays opaque, like Tahoe)
+ToolBarOpacity=35
+MenuBarOpacity=35
+TabBarOpacity=35
+MenuOpacity=75
+DolphinSidebarOpacity=25
+TransparentDolphinView=true
+DolphinViewOpacity=35
+DockWidgetDrawFrame=false
+SidePanelDrawFrame=false

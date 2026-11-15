@@ -44,6 +44,23 @@
     "tool": "functions"
   },
   "appearance": {
+    "liquidGlass": {
+      "accentColor": "",
+      "capsuleBar": false,
+      "contentTransparency": 0.78,
+      "darkEdge": true,
+      "edgeHighlight": 1.951223527575022,
+      "enable": true,
+      "glowSpread": true,
+      "highlights": "top",
+      "mode": "clear",
+      "modularSidebar": true,
+      "nearReflection": true,
+      "pressGlow": "subtle",
+      "refraction": 1.2532528580024067,
+      "tint": 0.1,
+      "tintAmount": 0.6
+    },
     "extraBackgroundTint": true,
     "fakeScreenRounding": 1,
     "fonts": {

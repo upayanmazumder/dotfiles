@@ -49,6 +49,42 @@ Live preferences and saved personal data remain local. Do not copy unrelated pre
 
 Run `/usr/lib/qt6/bin/qmllint --only-explicit-categories --syntax error` on changed QML files. Verify the running shell and the rendered widgets before committing.
 
+## Nothing Liquid glass
+
+The glass comes from `shlok-shinde/nothing-liquid`. The shell material uses dotfiles commit `c1c730608a55129ce07e407d365f3675d8d1f009`. The compositor plugin uses `shlok-shinde/hyprglass` commit `93dbe1907391b12699b57040ed694e4dc851a1e5`.
+
+End-4 remains the base. Do not run the upstream installer over this overlay. It also changes unrelated shell behavior. The selected widgets, their layout, the wallpaper, and existing shortcuts remain independent of the glass.
+
+`custom/general.lua` loads `custom/liquidglass.lua`. That file declares the plugin and applies the Clear and Regular presets to shell layers. `services/LiquidGlass.qml` synchronizes settings and the light or dark mode. It writes `~/.local/state/quickshell/user/generated/liquidglass.lua`. Do not track that generated file or the plugin binary.
+
+Settings → Quick → Liquid glass controls refraction, tint, highlights, click glow, capsule groups, and sidebar modules. Desktop widgets use the upstream shell shader. They cannot use compositor layer glass because they share their surface with the wallpaper.
+
+Darkly supplies Qt transparency through `kdeglobals` and `darklyrc`. Kitty uses `background_opacity 0.40`. Existing Qt windows can require reopening. Zed exposes glass through its transparent theme. Opaque browser and Electron content remains opaque. The old whole-window opacity rules are removed because they also faded text.
+
+### Build the plugin
+
+The current build targets Hyprland 0.57.2. The required compiler, headers, `make`, and Wayland development files are already installed on Sonder. Darkly is already listed as `darkly-bin` in `packages/aur.txt`.
+
+```sh
+src="$HOME/.local/share/nothing-liquid/source/hyprglass"
+mkdir -p "$(dirname "$src")"
+if [ ! -e "$src/.git" ]; then
+    git clone https://github.com/shlok-shinde/hyprglass "$src"
+fi
+git -C "$src" checkout --detach 93dbe1907391b12699b57040ed694e4dc851a1e5
+make -C "$src" clean
+make -C "$src" -j2 HYPRGLASS_VERSION=nothing-liquid-93dbe19
+mkdir -p "$HOME/.local/lib/nothing-liquid"
+strip --strip-debug -o "$HOME/.local/lib/nothing-liquid/hyprglass.so.new" "$src/hyprglass.so"
+mv "$HOME/.local/lib/nothing-liquid/hyprglass.so.new" "$HOME/.local/lib/nothing-liquid/hyprglass.so"
+```
+
+Rebuild after a Hyprland update. Do not bypass the plugin's ABI guard. A newer Hyprland API can require a newer compatible source revision. Save application work before restarting Hyprland to load a rebuilt plugin.
+
+Check the deployed configuration with `Hyprland --verify-config -c ~/.config/hypr/hyprland.lua`. Check `hyprctl configerrors` after a reload. `hyprctl -j hyprglass status` must report an active plugin, matching version, ready shaders, and active window and layer features.
+
+The initial replacement has a private rollback copy under `.apply-backups/nothing-liquid-TIMESTAMP/`. Compare archived files with live files before restoring them. Do not replace newer layout or application settings with an older backup.
+
 ## Special state
 
 Fish universal variables are machine state, not files to publish. The local setting `MISE_FISH_AUTO_ACTIVATE=0` prevents the vendor hook from changing PATH. Set it on a new installation with `set -U MISE_FISH_AUTO_ACTIVATE 0`. Keep personal wallpaper assets outside Git unless redistribution rights are clear.

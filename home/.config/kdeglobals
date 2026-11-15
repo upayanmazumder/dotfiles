@@ -151,7 +151,7 @@ Theme=breeze-dark
 [KDE]
 contrast=4
 frameContrast=0.2
-widgetStyle=Breeze
+widgetStyle=Darkly
 
 [KFileDialog Settings]
 Allow Expansion=false

@@ -53,9 +53,8 @@ AbstractBackgroundWidget {
             id: contentRect
             anchors.fill: parent
             widget: root
-            color: sizeMode === "4x1" ? "transparent" : Appearance.colors.colPrimaryContainer
+            color: sizeMode === "4x1" || Appearance.liquidGlass ? "transparent" : Appearance.colors.colPrimaryContainer
             shadowed: sizeMode !== "4x1" && Config.options.background.widgets.shadow
-            blurred: Config.options.background.widgets.blurWidgets && sizeMode === "2x2"
             glass: sizeMode !== "4x1"
 
             // 2x2
@@ -285,56 +284,24 @@ AbstractBackgroundWidget {
 
                 Repeater {
                     model: Math.min(root.worldCities.length, root.clockCount)
-                    delegate: Item {
+                    delegate: WidgetCard {
                         id: clockWrapper
                         required property int index
                         property var cityData: root.worldCities[index] ?? null
-                        readonly property bool glassOn: Config.options.background.widgets.glass.enable
+                        widget: root
+                        color: Appearance.liquidGlass ? "transparent"
+                            : ((clockWrapper.cityData?.isDay ?? true) ? Appearance.colors.colPrimary : Appearance.colors.colPrimaryContainer)
 
                         Layout.preferredWidth: 132
                         Layout.preferredHeight: 120
 
-                        StyledRectangularShadow {
-                            target: androidClock
-                            z: -2
-                            visible: Config.options.background.widgets.shadow
-                        }
-
-                        FrostedGlass {
-                            anchors.fill: parent
-                            blurSource: root.wallpaperItem
-                            cardRadius: Appearance.rounding?.verylarge ?? 30
-                            tint: (clockWrapper.cityData?.isDay ?? true)
-                                ? Appearance.colors.colPrimary
-                                : Appearance.colors.colLayer1
-                            trackX: root.x + clockWrapper.x
-                            trackY: root.y + clockWrapper.y
-                            visible: clockWrapper.glassOn
-                        }
-
-                        FastBlurred {
-                            anchors.fill: parent
-                            visible: Config.options.background.widgets.blurWidgets && !clockWrapper.glassOn
-                            blurSource: root.wallpaperItem
-                            cardRadius: Appearance.rounding?.verylarge ?? 30
-                            tint: (clockWrapper.cityData?.isDay ?? true)
-                                ? Appearance.colors.colPrimary
-                                : Appearance.colors.colLayer1
-                            tintOpacity: 0.55
-                            trackX: root.x
-                            trackY: root.y
-                        }
 
                         AndroidClock {
                             id: androidClock
                             anchors.fill: parent
                             radius: Appearance.rounding?.verylarge ?? 30
 
-                            backgroundColor: Config.options.background.widgets.blurWidgets || clockWrapper.glassOn
-                                ? "transparent"
-                                : ((clockWrapper.cityData?.isDay ?? true)
-                                    ? Appearance.colors.colPrimary
-                                    : Appearance.colors.colPrimaryContainer)
+                            backgroundColor: "transparent"
                             handColor: (clockWrapper.cityData?.isDay ?? true)
                                 ? Appearance.colors.colOnPrimary
                                 : Appearance.colors.colOnLayer0
