@@ -162,7 +162,22 @@ Singleton {
             }
 
             property JsonObject background: JsonObject {
+                property bool widgetsLocked: false
                 property JsonObject widgets: JsonObject {
+                    property bool blurWidgets: false
+                    property real blurRadius: 32
+                    property bool shadow: true
+                    property JsonObject glass: JsonObject {
+                        property bool enable: false
+                        property string tint: "transparent"
+                        property real tintStrength: 0.3
+                        property real rimWidth: 16
+                        property real pull: 26
+                        property real split: 0.06
+                        property real haze: 3
+                        property real vividness: 1.3
+                        property real sheen: 0.55
+                    }
                     property JsonObject clock: JsonObject {
                         property bool enable: true
                         property bool showOnlyWhenLocked: false
@@ -214,6 +229,42 @@ Singleton {
                         property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
                         property real x: 400
                         property real y: 100
+                    }
+                    property JsonObject media: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
+                        property real x: 400
+                        property real y: 100
+                        property real z: 0
+                        property string sizeMode: "1x3"
+                        property bool showLyrics: true
+                    }
+                    property JsonObject calendar: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
+                        property real x: 400
+                        property real y: 100
+                        property real z: 0
+                        property string sizeMode: "2x2"
+                    }
+                    property JsonObject worldClock: JsonObject {
+                        property bool enable: false
+                        property list<string> timezones: ["Australia/Sydney", "Asia/Tokyo", "Europe/London", "America/New_York"]
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property real z: 0
+                        property string sizeMode: "2x2"
+                        property bool vertical: false
+                        property int clockCount: 4
+                    }
+                    property JsonObject resources: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property real z: 0
+                        property bool vertical: false
                     }
                 }
                 property string wallpaperPath: ""
@@ -348,6 +399,7 @@ Singleton {
                     property int mouseScrollDeltaThreshold: 120 // delta >= this then it gets detected as mouse scroll rather than touchpad
                     property int mouseScrollFactor: 120
                     property int touchpadScrollFactor: 450
+                    property real touchpadSensitivity: 1
                 }
                 property JsonObject deadPixelWorkaround: JsonObject { // Hyprland leaves out 1 pixel on the right for interactions
                     property bool enable: false
@@ -399,6 +451,7 @@ Singleton {
             property JsonObject media: JsonObject {
                 // Attempt to remove dupes (the aggregator playerctl one and browsers' native ones when there's plasma browser integration)
                 property bool filterDuplicatePlayers: true
+                property bool showLyrics: true // Show timed lyrics in the media controls and media widget
             }
 
             property JsonObject networking: JsonObject {

@@ -24,7 +24,30 @@ The hotspot script reads two lines from `~/.config/hotspot/credentials`: SSID, t
 
 Install end-4 from its upstream project and use its chosen revision as the base. Its `hyprland.lua` loads `hyprland/*` and then `custom/*`, so `custom/` is the stable user extension point. Quickshell runs as `qs -c ii` in the current session. Rebase local Quickshell changes onto the upstream version before deploying. Keep the patch and any required owned modules synchronized.
 
-One patch records in-place edits to upstream files. `patches/quickshell-ii-local.patch` covers `~/.config/quickshell/ii/`, including the screenshare script, `BarContent.qml`, the background visualizer, the Hotspot toggle, and the `notifications.monitor` key fix in `NotificationPopup.qml` and `InterfaceConfig.qml`. It applies with `patch -p1` against upstream main commit `cb1c428b`. The Hyprland base needs no patch, because upstream main now has the same `render_power` fix. Regenerate the patch after each change to a tracked upstream file: copy the upstream tree to a scratch Git repository, commit it, overlay the tracked files, and take `git diff --cached`. Matugen overwrites `hypr/hyprland/colors.lua`, `hypr/hyprlock/colors.conf`, `fuzzel/fuzzel_theme.ini`, and the GTK and Zed theme outputs. Do not track those files.
+`patches/quickshell-ii-local.patch` records the tracked Quickshell overlays against upstream commit `cb1c428b`. It includes the selected desktop widgets and their compiled shader. Apply it from `~/.config/quickshell/ii/` with `git apply --binary /path/to/quickshell-ii-local.patch`. Use `git apply --check` first.
+
+Regenerate the patch after changes to tracked Quickshell files. Copy the upstream tree to a scratch Git repository. Commit that baseline. Overlay the tracked files. Generate the patch with `git diff --cached --binary`.
+
+The Hyprland base needs no patch, because upstream includes the `render_power` fix. Matugen overwrites generated color files and theme outputs. Do not track those files.
+
+## Desktop widgets and lyrics
+
+End-4 remains the upstream base. Selected widgets derive from `pctrade/end4-pC` commit `7538c66f2597959733c26a4ccccac1ebe6b4f56e`. `THIRD_PARTY.md` records their source and license.
+
+The tracked preferences enable Media, Calendar, World Clock, and Resources. `Background.qml` loads them through `WidgetsLoader.qml`. Clock, Weather, and the existing visualizer retain their settings.
+
+- Drag a widget to change its position. The `free` placement strategy stores its coordinates.
+- Use the corner handle to resize widgets that support size modes.
+- Use the World Clock settings button to select time zones.
+- Resources shows CPU usage, RAM usage, and battery charge. Machines without a battery show swap usage instead.
+
+The Media widget uses size mode `1x3` to display lyrics below its controls. Its lyrics button changes `background.widgets.media.showLyrics`. `media.showLyrics` also controls lyrics in the existing media popup.
+
+Lyrics follow the active MPRIS player, including Spotify. The Python helper queries LRCLIB, then BetterLyrics when necessary. These services receive the track title, artist, and duration. No Spotify credentials are required. Songs without synchronized lyrics do not show timed lines.
+
+Live preferences and saved personal data remain local. Do not copy unrelated preferences or personal content into this repository.
+
+Run `/usr/lib/qt6/bin/qmllint --only-explicit-categories --syntax error` on changed QML files. Verify the running shell and the rendered widgets before committing.
 
 ## Special state
 

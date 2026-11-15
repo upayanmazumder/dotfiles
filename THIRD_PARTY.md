@@ -4,9 +4,24 @@ This repo is licensed under GPL-3.0 (see `LICENSE`). Several files come from oth
 
 ## end-4/dots-hyprland
 
-Files under `home/.config/quickshell/ii/`, `patches/quickshell-ii-local.patch`, and `patches/hyprland-local.patch` are modified copies of, or additions to, [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland), which is GPL-3.0. The patches were made against upstream commit `301185c7`. Upstream copyright notices in those files stay in place.
+Files under `home/.config/quickshell/ii/` and `patches/quickshell-ii-local.patch` derive from [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland), which uses GPL-3.0. The patch targets upstream commit `cb1c428b`. Keep upstream copyright notices intact.
 
 `home/.config/quickshell/ii/services/MprisController.qml` has a header saying it comes from [outfoxxed/nixnew](https://git.outfoxxed.me/outfoxxed/nixnew). The header says that code has no license but the author allows redistribution. Keep the header intact.
+
+## pctrade/end4-pC
+
+The selected desktop widgets and lyrics implementation derive from [pctrade/end4-pC](https://github.com/pctrade/end4-pC), commit `7538c66f2597959733c26a4ccccac1ebe6b4f56e`. The project uses GPL-3.0. End-4 remains the installed base.
+
+The port includes these files under `home/.config/quickshell/ii/`:
+
+- `modules/ii/background/widgets/{media,calendar,worldclock,resources}/`
+- `modules/common/widgets/{AndroidClock,ComboChevronBadge,FastBlurred,FlipCard,FrostedGlass,Lyrics,ResizeHandler,StyledComboBoxSearch,StyledTextEditMenu,TouchpadScrollArea,WidgetCard,WidgetFlipHandle}.qml`
+- `modules/common/widgets/shaders/liquidLens.frag` and its compiled `.qsb` file
+- `services/{LyricsService,WorldClock}.qml` and `scripts/lyrics/lyrics.py`
+
+`modules/ii/background/WidgetsLoader.qml` adapts the upstream loader for the selected widgets. Local base components expose the properties these widgets require.
+
+The port excludes preset images, fonts, and personal media. [end4-pCpresets](https://github.com/pctrade/end4-pCpresets) supplies visual presets, not widget code.
 
 ## Oh My Posh themes
 

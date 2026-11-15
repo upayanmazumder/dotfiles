@@ -108,6 +108,34 @@
     "thumbnailPath": "",
     "wallpaperPath": "/home/upayan/Pictures/Wallpapers/basement.jpg",
     "widgets": {
+      "media": {
+        "enable": true,
+        "placementStrategy": "free",
+        "x": 40,
+        "y": 80,
+        "sizeMode": "1x3",
+        "showLyrics": true
+      },
+      "calendar": {
+        "enable": true,
+        "placementStrategy": "free",
+        "x": 520,
+        "y": 80,
+        "sizeMode": "2x2"
+      },
+      "worldClock": {
+        "enable": true,
+        "placementStrategy": "free",
+        "x": 1000,
+        "y": 80,
+        "sizeMode": "2x2"
+      },
+      "resources": {
+        "enable": true,
+        "placementStrategy": "free",
+        "x": 1000,
+        "y": 620
+      },
       "clock": {
         "cookie": {
           "aiStyling": true,
