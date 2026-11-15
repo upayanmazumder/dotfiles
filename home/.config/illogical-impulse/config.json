@@ -111,30 +111,43 @@
       "media": {
         "enable": true,
         "placementStrategy": "free",
-        "x": 40,
-        "y": 80,
+        "showLyrics": true,
         "sizeMode": "1x3",
-        "showLyrics": true
+        "x": 515.17578125,
+        "y": 528.61328125,
+        "z": 0
       },
       "calendar": {
         "enable": true,
         "placementStrategy": "free",
-        "x": 520,
-        "y": 80,
-        "sizeMode": "2x2"
+        "sizeMode": "2x3",
+        "x": 977.6015625,
+        "y": 662.35546875,
+        "z": 0
       },
       "worldClock": {
+        "clockCount": 4,
         "enable": true,
         "placementStrategy": "free",
-        "x": 1000,
-        "y": 80,
-        "sizeMode": "2x2"
+        "sizeMode": "2x2",
+        "timezones": [
+          "Asia/Kolkata",
+          "America/New_York",
+          "Europe/Helsinki",
+          "America/New_York"
+        ],
+        "vertical": true,
+        "x": 971.10546875,
+        "y": 383.67578125,
+        "z": 0
       },
       "resources": {
         "enable": true,
         "placementStrategy": "free",
-        "x": 1000,
-        "y": 620
+        "vertical": false,
+        "x": 511.296875,
+        "y": 379.78515625,
+        "z": 0
       },
       "clock": {
         "cookie": {
