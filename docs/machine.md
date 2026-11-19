@@ -64,3 +64,27 @@ The fish prompt is Tide, which loads from the fish functions directory. Install 
 `home/.omp/AGENTS.md` and `home/.claude/rules/asd-ste100.md` are tracked symlinks into `home/.agents/`. `apply.sh --configs` creates them after the file copy pass.
 
 The locale is `en_GB`, and upstream ships no `en_GB` translation file. The two readers log a warning until `en_GB.json` exists. Copy `en_US.json` to `en_GB.json` in `~/.config/quickshell/ii/translations/` and in `~/.config/illogical-impulse/translations/` to stop the warning after an upstream update.
+
+## Thorium and KDE Connect
+
+Thorium is the browser. The store extension `bdlhicpempabeliieeiehehfbaopafcf` sends pages to KDE Connect devices, but it needs its own native host. The stock `plasma-browser-integration` host allows only the Plasma Integration extension ID.
+
+Install the host binary from the extension release page, then keep mode `755`:
+
+```sh
+curl -fL -o /tmp/kdeconnect-host.tar.gz \
+  https://github.com/2u841r/kdeconnect-chrome-extension/releases/download/v0.2.0/kdeconnect-chrome-extension-0.2.0-linux-amd64.tar.gz
+mkdir -p ~/.config/thorium/NativeMessagingHosts
+tar -xzf /tmp/kdeconnect-host.tar.gz -C /tmp
+install -m 755 /tmp/kdeconnect-chrome-extension ~/.config/thorium/NativeMessagingHosts/com.0xc0dedbad.kdeconnect_chrome
+```
+
+The tracked manifest names that binary and allows only this extension ID. Restart Thorium after a host change, because the browser reads native host manifests at start-up.
+
+Check the host without a browser. A device list proves the D-Bus link works:
+
+```sh
+~/.config/thorium/NativeMessagingHosts/com.0xc0dedbad.kdeconnect_chrome -devices
+```
+
+Device choice stays in extension storage. Set a default device in the extension options, or leave it unset to pick a device for each share.
