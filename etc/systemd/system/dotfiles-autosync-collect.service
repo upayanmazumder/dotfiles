@@ -1,0 +1,18 @@
+[Unit]
+Description=Collect reviewed dotfiles changes without credentials
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/dotfiles-autosync/worker.py collect
+ExecStartPost=/usr/bin/systemctl --no-block start dotfiles-autosync-publish.service
+StateDirectory=dotfiles-autosync
+StateDirectoryMode=0755
+UMask=0022
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+NoNewPrivileges=yes
+MemoryMax=256M
+MemorySwapMax=0
+CPUQuota=25%
+TimeoutStartSec=90

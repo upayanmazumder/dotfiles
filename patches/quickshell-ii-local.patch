@@ -6,7 +6,7 @@
 # Apply from ~/.config/quickshell/ii: git apply --binary /path/to/quickshell-ii-local.patch
 
 diff --git a/GlobalStates.qml b/GlobalStates.qml
-index bfb531e..508c5fd 100644
+index bfb531e6..508c5fd8 100644
 --- a/GlobalStates.qml
 +++ b/GlobalStates.qml
 @@ -14,6 +14,7 @@ Singleton {
@@ -18,16 +18,79 @@ index bfb531e..508c5fd 100644
      property bool osdVolumeOpen: false
      property bool oskOpen: false
 diff --git a/modules/common/Appearance.qml b/modules/common/Appearance.qml
-index bedf01e..0148cce 100644
+index bedf01eb..6acb9af4 100644
 --- a/modules/common/Appearance.qml
 +++ b/modules/common/Appearance.qml
-@@ -31,8 +31,24 @@ Singleton {
+@@ -1,5 +1,7 @@
+ import QtQuick
+ import Quickshell
++import Quickshell.Hyprland
++import Quickshell.Io
+ import qs.modules.common.functions
+ pragma Singleton
+ pragma ComponentBehavior: Bound
+@@ -24,6 +26,49 @@ Singleton {
+         depth: 0 // 2^0 = 1 color
+         rescaleSize: 10
+     }
++
++    // Read game mode from the compositor, which is the value the quick toggle
++    // writes. A config reload covers every change; the timer is a fallback for
++    // a reload event the shell did not see.
++    function refreshGameMode() {
++        if (!gameModeProc.running)
++            gameModeProc.running = true;
++    }
++
++    Process {
++        id: gameModeProc
++        command: ["hyprctl", "getoption", "-j", "animations:enabled"]
++        stdout: StdioCollector {
++            onStreamFinished: {
++                try {
++                    const parsed = JSON.parse(text);
++                    const enabled = parsed.bool ?? parsed.int;
++                    if (enabled !== undefined)
++                        root.gameMode = !enabled;
++                } catch (error) {
++                    // hyprctl missing or Hyprland not running: keep the last value.
++                }
++            }
++        }
++    }
++
++    Connections {
++        target: Hyprland
++        function onRawEvent(event) {
++            if (event.name === "configreloaded")
++                root.refreshGameMode();
++        }
++    }
++
++    Timer {
++        interval: 15000
++        repeat: true
++        running: true
++        onTriggered: root.refreshGameMode()
++    }
++
++    Component.onCompleted: root.refreshGameMode()
++
+     property real wallpaperVibrancy: (wallColorQuant.colors[0]?.hslSaturation + wallColorQuant.colors[0]?.hslLightness) / 2
+     property real autoBackgroundTransparency: { // y = 0.5768x^2 - 0.759x + 0.2896
+         let x = wallpaperVibrancy
+@@ -31,8 +76,29 @@ Singleton {
          return Math.max(0, Math.min(0.22, y)) - 0.12 * (m3colors.darkmode ? 0 : 1)
      }
      property real autoContentTransparency: 0.9
 -    property real backgroundTransparency: Config?.options.appearance.transparency.enable ? Config?.options.appearance.transparency.automatic ? autoBackgroundTransparency : Config?.options.appearance.transparency.backgroundTransparency : 0
 -    property real contentTransparency: Config?.options.appearance.transparency.automatic ? autoContentTransparency : Config?.options.appearance.transparency.contentTransparency
-+    property bool liquidGlass: Config?.options.appearance.liquidGlass.enable ?? false
++    // Game mode turns animations, blur, shadows and rounding off to free the
++    // GPU. Glass refraction is the most expensive thing the shell draws, so it
++    // goes off with them. Game mode is the state the quick toggle leaves
++    // behind: `animations:enabled` off in the compositor.
++    property bool gameMode: false
++    property bool liquidGlass: (Config?.options.appearance.liquidGlass.enable ?? false) && !root.gameMode
 +    property bool hasAccent: (Config?.options.appearance.liquidGlass.accentColor ?? "") !== ""
 +    property color accent: !hasAccent ? colors.colPrimary
 +        : (!m3colors.darkmode && Qt.color(Config.options.appearance.liquidGlass.accentColor).hslLightness > 0.85) ? "#1A1A1A"
@@ -48,7 +111,7 @@ index bedf01e..0148cce 100644
  
      m3colors: QtObject {
          property bool darkmode: true
-@@ -116,7 +132,7 @@ Singleton {
+@@ -116,7 +182,7 @@ Singleton {
          property color colOnLayer0: m3colors.m3onBackground
          property color colLayer0Hover: ColorUtils.transparentize(ColorUtils.mix(colLayer0, colOnLayer0, 0.9, root.contentTransparency))
          property color colLayer0Active: ColorUtils.transparentize(ColorUtils.mix(colLayer0, colOnLayer0, 0.8, root.contentTransparency))
@@ -57,7 +120,7 @@ index bedf01e..0148cce 100644
          // Layer 1
          property color colLayer1Base: m3colors.m3surfaceContainerLow
          property color colLayer1: ColorUtils.solveOverlayColor(colLayer0Base, colLayer1Base, 1 - root.contentTransparency);
-@@ -185,7 +201,7 @@ Singleton {
+@@ -185,7 +251,7 @@ Singleton {
          property color colTooltip: m3colors.m3inverseSurface
          property color colOnTooltip: m3colors.m3inverseOnSurface
          property color colScrim: ColorUtils.transparentize(m3colors.m3scrim, 0.5)
@@ -66,7 +129,7 @@ index bedf01e..0148cce 100644
          property color colOutline: m3colors.m3outline
          property color colOutlineVariant: m3colors.m3outlineVariant
          property color colError: m3colors.m3error
-@@ -207,7 +223,7 @@ Singleton {
+@@ -207,7 +273,7 @@ Singleton {
          property int large: 23
          property int verylarge: 30
          property int full: 9999
@@ -76,7 +139,7 @@ index bedf01e..0148cce 100644
      }
  
 diff --git a/modules/common/Config.qml b/modules/common/Config.qml
-index 5fcd1bb..98b70fb 100644
+index 5fcd1bbd..98b70fb3 100644
 --- a/modules/common/Config.qml
 +++ b/modules/common/Config.qml
 @@ -137,6 +137,23 @@ Singleton {
@@ -194,7 +257,7 @@ index 5fcd1bb..98b70fb 100644
  
              property JsonObject networking: JsonObject {
 diff --git a/modules/common/Directories.qml b/modules/common/Directories.qml
-index 78b0a9e..1ed886d 100644
+index 78b0a9ed..1ed886dc 100644
 --- a/modules/common/Directories.qml
 +++ b/modules/common/Directories.qml
 @@ -48,8 +48,11 @@ Singleton {
@@ -209,12 +272,64 @@ index 78b0a9e..1ed886d 100644
      property string userAvatarPathRicersAndWeirdSystems2: FileUtils.trimFileProtocol(`${Directories.home}.face.icon`)
      // Cleanup on init
      Component.onCompleted: {
+diff --git a/modules/common/models/quickToggles/GameModeToggle.qml b/modules/common/models/quickToggles/GameModeToggle.qml
+index 79dd9866..aa062d15 100644
+--- a/modules/common/models/quickToggles/GameModeToggle.qml
++++ b/modules/common/models/quickToggles/GameModeToggle.qml
+@@ -1,4 +1,5 @@
+ import QtQuick
++import Quickshell
+ import Quickshell.Io
+ import qs.modules.common.models.hyprland
+ import qs.services
+@@ -7,20 +8,19 @@ QuickToggleModel {
+     id: root
+     name: Translation.tr("Game mode")
+     toggled: !confOpt.value
+-    icon: "gamepad"
++    icon: "sports_esports"
+ 
+     mainAction: () => {
+-        root.toggled = !root.toggled;
+-        if (root.toggled) {
++        if (!root.toggled) {
+             HyprlandConfig.setMany({
+-                "animations:enabled": 0,
+-                "decoration:shadow:enabled": 0,
+-                "decoration:blur:enabled": 0,
++                "animations:enabled": false,
++                "decoration:shadow:enabled": false,
++                "decoration:blur:enabled": false,
+                 "general:gaps_in": 0,
+                 "general:gaps_out": 0,
+                 "general:border_size": 1,
+                 "decoration:rounding": 0,
+-                "general:allow_tearing": 1
++                "general:allow_tearing": true
+             });
+         } else {
+             HyprlandConfig.resetMany([ //
+@@ -39,7 +39,12 @@ QuickToggleModel {
+     HyprlandConfigOption {
+         id: confOpt
+         key: "animations:enabled"
++        // The compositor restores shadows during reload. Apply this after the read.
++        onFetchingChanged: {
++            if (!fetching && value === false)
++                Quickshell.execDetached(["hyprctl", "eval", "hl.config({decoration={shadow={enabled=false}}})"]);
++        }
+     }
+ 
+     tooltipText: Translation.tr("Game mode")
+-}
++}
+\ No newline at end of file
 diff --git a/modules/common/models/quickToggles/HotspotToggle.qml b/modules/common/models/quickToggles/HotspotToggle.qml
 new file mode 100644
-index 0000000..9902fee
+index 00000000..d719dfae
 --- /dev/null
 +++ b/modules/common/models/quickToggles/HotspotToggle.qml
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,54 @@
 +import QtQuick
 +import Quickshell
 +import Quickshell.Io
@@ -225,14 +340,16 @@ index 0000000..9902fee
 +QuickToggleModel {
 +    id: root
 +    readonly property string script: FileUtils.trimFileProtocol(Directories.home) + "/Scripts/bin/hotspot"
++    property bool needsRestart: false
 +
 +    name: Translation.tr("Hotspot")
 +    icon: "wifi_tethering"
-+    tooltipText: Translation.tr("Sonder hotspot")
++    statusText: actionProcess.running ? Translation.tr("Please wait") : needsRestart ? Translation.tr("Restart required") : toggled ? Translation.tr("On") : Translation.tr("Off")
++    tooltipText: needsRestart ? Translation.tr("Restart hotspot") : Translation.tr("Hotspot")
 +    available: !actionProcess.running
 +    mainAction: () => {
 +        if (!actionProcess.running)
-+            actionProcess.exec([root.script, root.toggled ? "stop" : "--daemon"])
++            actionProcess.exec([root.script, root.needsRestart ? "restart" : root.toggled ? "stop" : "--daemon"])
 +    }
 +
 +    function refresh() {
@@ -252,7 +369,10 @@ index 0000000..9902fee
 +    Process {
 +        id: statusProcess
 +        command: [root.script, "status"]
-+        onExited: (exitCode, exitStatus) => root.toggled = exitCode === 0
++        onExited: (exitCode, exitStatus) => {
++            root.needsRestart = exitCode === 2
++            root.toggled = exitCode === 0 || root.needsRestart
++        }
 +    }
 +
 +    Process {
@@ -266,7 +386,7 @@ index 0000000..9902fee
 +}
 diff --git a/modules/common/shaders/liquidglass.frag b/modules/common/shaders/liquidglass.frag
 new file mode 100644
-index 0000000..ed39b4e
+index 00000000..ed39b4e0
 --- /dev/null
 +++ b/modules/common/shaders/liquidglass.frag
 @@ -0,0 +1,126 @@
@@ -535,7 +655,7 @@ HcmV?d00001
 
 diff --git a/modules/common/widgets/AndroidClock.qml b/modules/common/widgets/AndroidClock.qml
 new file mode 100644
-index 0000000..eb1c66a
+index 00000000..eb1c66a4
 --- /dev/null
 +++ b/modules/common/widgets/AndroidClock.qml
 @@ -0,0 +1,129 @@
@@ -670,7 +790,7 @@ index 0000000..eb1c66a
 +}
 diff --git a/modules/common/widgets/ComboChevronBadge.qml b/modules/common/widgets/ComboChevronBadge.qml
 new file mode 100644
-index 0000000..5d2d179
+index 00000000..5d2d1790
 --- /dev/null
 +++ b/modules/common/widgets/ComboChevronBadge.qml
 @@ -0,0 +1,41 @@
@@ -717,7 +837,7 @@ index 0000000..5d2d179
 +}
 diff --git a/modules/common/widgets/FlipCard.qml b/modules/common/widgets/FlipCard.qml
 new file mode 100644
-index 0000000..5048623
+index 00000000..5048623f
 --- /dev/null
 +++ b/modules/common/widgets/FlipCard.qml
 @@ -0,0 +1,28 @@
@@ -751,7 +871,7 @@ index 0000000..5048623
 +}
 diff --git a/modules/common/widgets/LiquidGlassEffect.qml b/modules/common/widgets/LiquidGlassEffect.qml
 new file mode 100644
-index 0000000..f745f25
+index 00000000..f745f256
 --- /dev/null
 +++ b/modules/common/widgets/LiquidGlassEffect.qml
 @@ -0,0 +1,123 @@
@@ -880,7 +1000,7 @@ index 0000000..f745f25
 +}
 diff --git a/modules/common/widgets/Lyrics.qml b/modules/common/widgets/Lyrics.qml
 new file mode 100644
-index 0000000..a70cc12
+index 00000000..a70cc124
 --- /dev/null
 +++ b/modules/common/widgets/Lyrics.qml
 @@ -0,0 +1,106 @@
@@ -992,7 +1112,7 @@ index 0000000..a70cc12
 +}
 \ No newline at end of file
 diff --git a/modules/common/widgets/MaterialLoadingIndicator.qml b/modules/common/widgets/MaterialLoadingIndicator.qml
-index 502cd1a..3ba7b99 100644
+index 502cd1a3..3ba7b99e 100644
 --- a/modules/common/widgets/MaterialLoadingIndicator.qml
 +++ b/modules/common/widgets/MaterialLoadingIndicator.qml
 @@ -9,6 +9,8 @@ Rectangle {
@@ -1005,7 +1125,7 @@ index 502cd1a..3ba7b99 100644
      // Size, color
      property double implicitSize: 48
 diff --git a/modules/common/widgets/MaterialShapeWrappedMaterialSymbol.qml b/modules/common/widgets/MaterialShapeWrappedMaterialSymbol.qml
-index b6abd1e..bf98c73 100644
+index b6abd1e9..bf98c73a 100644
 --- a/modules/common/widgets/MaterialShapeWrappedMaterialSymbol.qml
 +++ b/modules/common/widgets/MaterialShapeWrappedMaterialSymbol.qml
 @@ -8,6 +8,7 @@ MaterialShape {
@@ -1018,7 +1138,7 @@ index b6abd1e..bf98c73 100644
      color: Appearance.colors.colSecondaryContainer
 diff --git a/modules/common/widgets/ResizeHandler.qml b/modules/common/widgets/ResizeHandler.qml
 new file mode 100644
-index 0000000..224d44a
+index 00000000..224d44ac
 --- /dev/null
 +++ b/modules/common/widgets/ResizeHandler.qml
 @@ -0,0 +1,175 @@
@@ -1200,7 +1320,7 @@ index 0000000..224d44a
 \ No newline at end of file
 diff --git a/modules/common/widgets/StyledComboBoxSearch.qml b/modules/common/widgets/StyledComboBoxSearch.qml
 new file mode 100644
-index 0000000..daa4967
+index 00000000..daa49673
 --- /dev/null
 +++ b/modules/common/widgets/StyledComboBoxSearch.qml
 @@ -0,0 +1,347 @@
@@ -1554,7 +1674,7 @@ index 0000000..daa4967
 \ No newline at end of file
 diff --git a/modules/common/widgets/StyledTextEditMenu.qml b/modules/common/widgets/StyledTextEditMenu.qml
 new file mode 100644
-index 0000000..79eba1a
+index 00000000..79eba1ac
 --- /dev/null
 +++ b/modules/common/widgets/StyledTextEditMenu.qml
 @@ -0,0 +1,160 @@
@@ -1719,7 +1839,7 @@ index 0000000..79eba1a
 +    }
 +}
 diff --git a/modules/common/widgets/ToolbarTabBar.qml b/modules/common/widgets/ToolbarTabBar.qml
-index 708b30b..76d2c47 100644
+index 708b30bd..76d2c472 100644
 --- a/modules/common/widgets/ToolbarTabBar.qml
 +++ b/modules/common/widgets/ToolbarTabBar.qml
 @@ -56,18 +56,18 @@ Item {
@@ -1746,7 +1866,7 @@ index 708b30b..76d2c47 100644
          width: Math.max(rightBound.idx1, rightBound.idx2) - x
 diff --git a/modules/common/widgets/TouchpadScrollArea.qml b/modules/common/widgets/TouchpadScrollArea.qml
 new file mode 100644
-index 0000000..e5f42e9
+index 00000000..e5f42e99
 --- /dev/null
 +++ b/modules/common/widgets/TouchpadScrollArea.qml
 @@ -0,0 +1,113 @@
@@ -1865,7 +1985,7 @@ index 0000000..e5f42e9
 +}
 diff --git a/modules/common/widgets/WallpaperGlass.qml b/modules/common/widgets/WallpaperGlass.qml
 new file mode 100644
-index 0000000..1a60860
+index 00000000..1a60860d
 --- /dev/null
 +++ b/modules/common/widgets/WallpaperGlass.qml
 @@ -0,0 +1,29 @@
@@ -1900,7 +2020,7 @@ index 0000000..1a60860
 +}
 diff --git a/modules/common/widgets/WidgetCard.qml b/modules/common/widgets/WidgetCard.qml
 new file mode 100644
-index 0000000..9806380
+index 00000000..98063805
 --- /dev/null
 +++ b/modules/common/widgets/WidgetCard.qml
 @@ -0,0 +1,30 @@
@@ -1936,7 +2056,7 @@ index 0000000..9806380
 +}
 diff --git a/modules/common/widgets/WidgetFlipHandle.qml b/modules/common/widgets/WidgetFlipHandle.qml
 new file mode 100644
-index 0000000..3ffb8fa
+index 00000000..3ffb8fa9
 --- /dev/null
 +++ b/modules/common/widgets/WidgetFlipHandle.qml
 @@ -0,0 +1,68 @@
@@ -2009,7 +2129,7 @@ index 0000000..3ffb8fa
 +    }
 +}
 diff --git a/modules/ii/background/Background.qml b/modules/ii/background/Background.qml
-index 7841fe1..9501336 100644
+index 7841fe1d..9501336e 100644
 --- a/modules/ii/background/Background.qml
 +++ b/modules/ii/background/Background.qml
 @@ -14,9 +14,6 @@ import Quickshell.Io
@@ -2065,7 +2185,7 @@ index 7841fe1..9501336 100644
          }
 diff --git a/modules/ii/background/WidgetsLoader.qml b/modules/ii/background/WidgetsLoader.qml
 new file mode 100644
-index 0000000..baface2
+index 00000000..baface25
 --- /dev/null
 +++ b/modules/ii/background/WidgetsLoader.qml
 @@ -0,0 +1,157 @@
@@ -2227,7 +2347,7 @@ index 0000000..baface2
 +    }
 +}
 diff --git a/modules/ii/background/widgets/AbstractBackgroundWidget.qml b/modules/ii/background/widgets/AbstractBackgroundWidget.qml
-index 6d8c145..deb00c5 100644
+index 6d8c1459..deb00c5e 100644
 --- a/modules/ii/background/widgets/AbstractBackgroundWidget.qml
 +++ b/modules/ii/background/widgets/AbstractBackgroundWidget.qml
 @@ -15,13 +15,16 @@ AbstractWidget {
@@ -2266,7 +2386,7 @@ index 6d8c145..deb00c5 100644
      property bool dominantColorIsDark: dominantColor.hslLightness < 0.5
 diff --git a/modules/ii/background/widgets/calendar/CalendarWidget.qml b/modules/ii/background/widgets/calendar/CalendarWidget.qml
 new file mode 100644
-index 0000000..c1cad72
+index 00000000..c1cad720
 --- /dev/null
 +++ b/modules/ii/background/widgets/calendar/CalendarWidget.qml
 @@ -0,0 +1,511 @@
@@ -2783,7 +2903,7 @@ index 0000000..c1cad72
 +}
 diff --git a/modules/ii/background/widgets/media/MediaWidget.qml b/modules/ii/background/widgets/media/MediaWidget.qml
 new file mode 100644
-index 0000000..81bb17f
+index 00000000..81bb17f4
 --- /dev/null
 +++ b/modules/ii/background/widgets/media/MediaWidget.qml
 @@ -0,0 +1,910 @@
@@ -3699,7 +3819,7 @@ index 0000000..81bb17f
 +}
 diff --git a/modules/ii/background/widgets/resources/ResourcesWidget.qml b/modules/ii/background/widgets/resources/ResourcesWidget.qml
 new file mode 100644
-index 0000000..e4c4fa4
+index 00000000..e4c4fa48
 --- /dev/null
 +++ b/modules/ii/background/widgets/resources/ResourcesWidget.qml
 @@ -0,0 +1,118 @@
@@ -3823,7 +3943,7 @@ index 0000000..e4c4fa4
 +}
 diff --git a/modules/ii/background/widgets/visualizer/AudioVisualizerWidget.qml b/modules/ii/background/widgets/visualizer/AudioVisualizerWidget.qml
 new file mode 100644
-index 0000000..aa1f30f
+index 00000000..aa1f30f6
 --- /dev/null
 +++ b/modules/ii/background/widgets/visualizer/AudioVisualizerWidget.qml
 @@ -0,0 +1,65 @@
@@ -3894,7 +4014,7 @@ index 0000000..aa1f30f
 +}
 diff --git a/modules/ii/background/widgets/worldclock/WorldClockWidget.qml b/modules/ii/background/widgets/worldclock/WorldClockWidget.qml
 new file mode 100644
-index 0000000..a47d56c
+index 00000000..a47d56cb
 --- /dev/null
 +++ b/modules/ii/background/widgets/worldclock/WorldClockWidget.qml
 @@ -0,0 +1,355 @@
@@ -4254,7 +4374,7 @@ index 0000000..a47d56c
 +    }
 +}
 diff --git a/modules/ii/bar/BarContent.qml b/modules/ii/bar/BarContent.qml
-index 3bec758..29692b2 100644
+index 3bec7589..29692b26 100644
 --- a/modules/ii/bar/BarContent.qml
 +++ b/modules/ii/bar/BarContent.qml
 @@ -41,7 +41,7 @@ Item { // Bar content region
@@ -4299,7 +4419,7 @@ index 3bec758..29692b2 100644
                  visible: root.useShortenedForm === 0
                  Layout.fillWidth: false
 diff --git a/modules/ii/bar/BarGroup.qml b/modules/ii/bar/BarGroup.qml
-index 35769e4..745c7a0 100644
+index 35769e40..745c7a05 100644
 --- a/modules/ii/bar/BarGroup.qml
 +++ b/modules/ii/bar/BarGroup.qml
 @@ -20,7 +20,7 @@ Item {
@@ -4312,7 +4432,7 @@ index 35769e4..745c7a0 100644
  
      GridLayout {
 diff --git a/modules/ii/bar/LeftSidebarButton.qml b/modules/ii/bar/LeftSidebarButton.qml
-index 6c73ca7..b78baed 100644
+index 6c73ca72..b78baed4 100644
 --- a/modules/ii/bar/LeftSidebarButton.qml
 +++ b/modules/ii/bar/LeftSidebarButton.qml
 @@ -59,7 +59,7 @@ RippleButton {
@@ -4325,7 +4445,7 @@ index 6c73ca7..b78baed 100644
          Rectangle {
              opacity: root.showPing ? 1 : 0
 diff --git a/modules/ii/bar/UtilButtons.qml b/modules/ii/bar/UtilButtons.qml
-index 615ed65..18e65b6 100644
+index 615ed653..18e65b6a 100644
 --- a/modules/ii/bar/UtilButtons.qml
 +++ b/modules/ii/bar/UtilButtons.qml
 @@ -1,6 +1,7 @@
@@ -4360,7 +4480,7 @@ index 615ed65..18e65b6 100644
      }
  }
 diff --git a/modules/ii/bar/Workspaces.qml b/modules/ii/bar/Workspaces.qml
-index 34b2c57..f6be16e 100644
+index 34b2c573..f6be16e1 100644
 --- a/modules/ii/bar/Workspaces.qml
 +++ b/modules/ii/bar/Workspaces.qml
 @@ -196,7 +196,7 @@ ButtonMouseArea {
@@ -4382,7 +4502,7 @@ index 34b2c57..f6be16e 100644
              x: root.vertical ? null : indicatorPosition
              y: root.vertical ? indicatorPosition : null
 diff --git a/modules/ii/lock/LockSurface.qml b/modules/ii/lock/LockSurface.qml
-index 4eb709c..de3335f 100644
+index 4eb709c0..de3335fb 100644
 --- a/modules/ii/lock/LockSurface.qml
 +++ b/modules/ii/lock/LockSurface.qml
 @@ -11,6 +11,8 @@ import qs.modules.common.panels.lock
@@ -4443,7 +4563,7 @@ index 4eb709c..de3335f 100644
      Toolbar {
          id: mainIsland
 diff --git a/modules/ii/mediaControls/PlayerControl.qml b/modules/ii/mediaControls/PlayerControl.qml
-index 7f0eabb..a24cc2a 100644
+index 7f0eabbc..a24cc2af 100644
 --- a/modules/ii/mediaControls/PlayerControl.qml
 +++ b/modules/ii/mediaControls/PlayerControl.qml
 @@ -306,6 +306,33 @@ Item { // Player instance
@@ -4482,7 +4602,7 @@ index 7f0eabb..a24cc2a 100644
  }
 \ No newline at end of file
 diff --git a/modules/ii/notificationPopup/NotificationPopup.qml b/modules/ii/notificationPopup/NotificationPopup.qml
-index 669e397..8d48b5e 100644
+index 669e3971..8d48b5e5 100644
 --- a/modules/ii/notificationPopup/NotificationPopup.qml
 +++ b/modules/ii/notificationPopup/NotificationPopup.qml
 @@ -14,7 +14,7 @@ Scope {
@@ -4495,7 +4615,7 @@ index 669e397..8d48b5e 100644
          WlrLayershell.namespace: "quickshell:notificationPopup"
          WlrLayershell.layer: WlrLayer.Overlay
 diff --git a/modules/ii/onScreenDisplay/indicators/VolumeIndicator.qml b/modules/ii/onScreenDisplay/indicators/VolumeIndicator.qml
-index da8a690..c949d69 100644
+index da8a690b..c949d696 100644
 --- a/modules/ii/onScreenDisplay/indicators/VolumeIndicator.qml
 +++ b/modules/ii/onScreenDisplay/indicators/VolumeIndicator.qml
 @@ -4,6 +4,7 @@ import qs.modules.ii.onScreenDisplay
@@ -4507,7 +4627,7 @@ index da8a690..c949d69 100644
      icon: Audio.sink?.audio.muted ? "volume_off" : "volume_up"
      name: Translation.tr("Volume")
 diff --git a/modules/ii/overview/Overview.qml b/modules/ii/overview/Overview.qml
-index 1d2f5e5..6b33bb7 100644
+index 1d2f5e5c..6b33bb72 100644
 --- a/modules/ii/overview/Overview.qml
 +++ b/modules/ii/overview/Overview.qml
 @@ -14,6 +14,7 @@ import Quickshell.Hyprland
@@ -4593,7 +4713,7 @@ index 1d2f5e5..6b33bb7 100644
      }
      GlobalShortcut {
 diff --git a/modules/ii/screenCorners/ScreenCorners.qml b/modules/ii/screenCorners/ScreenCorners.qml
-index f8b1e24..224ecb1 100644
+index f8b1e243..224ecb14 100644
 --- a/modules/ii/screenCorners/ScreenCorners.qml
 +++ b/modules/ii/screenCorners/ScreenCorners.qml
 @@ -99,9 +99,7 @@ Scope {
@@ -4619,7 +4739,7 @@ index f8b1e24..224ecb1 100644
                      }
                      onMovedAway: {
 diff --git a/modules/ii/sidebarRight/QuickSliders.qml b/modules/ii/sidebarRight/QuickSliders.qml
-index 0153505..3865f15 100644
+index 01535050..3865f156 100644
 --- a/modules/ii/sidebarRight/QuickSliders.qml
 +++ b/modules/ii/sidebarRight/QuickSliders.qml
 @@ -72,9 +72,13 @@ Rectangle {
@@ -4653,7 +4773,7 @@ index 0153505..3865f15 100644
              }
          }
 diff --git a/modules/ii/sidebarRight/SidebarRightContent.qml b/modules/ii/sidebarRight/SidebarRightContent.qml
-index 412912e..9ca3fe2 100644
+index 412912ed..9ca3fe27 100644
 --- a/modules/ii/sidebarRight/SidebarRightContent.qml
 +++ b/modules/ii/sidebarRight/SidebarRightContent.qml
 @@ -53,8 +53,8 @@ Item {
@@ -4668,7 +4788,7 @@ index 412912e..9ca3fe2 100644
          radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
  
 diff --git a/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml b/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
-index 8457b3c..0d39186 100644
+index 8457b3cd..0d391860 100644
 --- a/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
 +++ b/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml
 @@ -29,7 +29,7 @@ AbstractQuickPanel {
@@ -4682,7 +4802,7 @@ index 8457b3c..0d39186 100644
      readonly property list<var> toggleRows: toggleRowsForList(toggles)
 diff --git a/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidHotspotToggle.qml b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidHotspotToggle.qml
 new file mode 100644
-index 0000000..22487af
+index 00000000..22487af1
 --- /dev/null
 +++ b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidHotspotToggle.qml
 @@ -0,0 +1,5 @@
@@ -4692,7 +4812,7 @@ index 0000000..22487af
 +    toggleModel: HotspotToggle {}
 +}
 diff --git a/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml
-index 0106249..7c6e1f5 100644
+index 01062492..7c6e1f57 100644
 --- a/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml
 +++ b/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml
 @@ -148,6 +148,19 @@ DelegateChooser {
@@ -4716,7 +4836,7 @@ index 0106249..7c6e1f5 100644
          required property int index
          required property var modelData
 diff --git a/modules/settings/InterfaceConfig.qml b/modules/settings/InterfaceConfig.qml
-index de544ed..5420c8f 100644
+index de544ed8..5420c8f7 100644
 --- a/modules/settings/InterfaceConfig.qml
 +++ b/modules/settings/InterfaceConfig.qml
 @@ -269,9 +269,9 @@ ContentPage {
@@ -4751,7 +4871,7 @@ index de544ed..5420c8f 100644
          }
 diff --git a/modules/settings/LiquidGlassConfig.qml b/modules/settings/LiquidGlassConfig.qml
 new file mode 100644
-index 0000000..4b423cb
+index 00000000..4b423cb2
 --- /dev/null
 +++ b/modules/settings/LiquidGlassConfig.qml
 @@ -0,0 +1,286 @@
@@ -5042,7 +5162,7 @@ index 0000000..4b423cb
 +    }
 +}
 diff --git a/modules/settings/QuickConfig.qml b/modules/settings/QuickConfig.qml
-index 75d956a..d806d0b 100644
+index 75d956a8..d806d0b8 100644
 --- a/modules/settings/QuickConfig.qml
 +++ b/modules/settings/QuickConfig.qml
 @@ -226,6 +226,8 @@ ContentPage {
@@ -5055,7 +5175,7 @@ index 75d956a..d806d0b 100644
          icon: "screenshot_monitor"
          title: Translation.tr("Bar & screen")
 diff --git a/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml b/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml
-index e42f735..e57b810 100644
+index e42f7353..e57b8106 100644
 --- a/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml
 +++ b/modules/waffle/actionCenter/mainPage/MainPageBodySliders.qml
 @@ -58,6 +58,7 @@ ColumnLayout {
@@ -5068,7 +5188,7 @@ index e42f735..e57b810 100644
  
 diff --git a/scripts/lyrics/lyrics.py b/scripts/lyrics/lyrics.py
 new file mode 100755
-index 0000000..84fa3fb
+index 00000000..84fa3fbf
 --- /dev/null
 +++ b/scripts/lyrics/lyrics.py
 @@ -0,0 +1,121 @@
@@ -5196,7 +5316,7 @@ index 0000000..84fa3fb
 \ No newline at end of file
 diff --git a/scripts/screenshare/toggle.sh b/scripts/screenshare/toggle.sh
 new file mode 100755
-index 0000000..2174799
+index 00000000..21747996
 --- /dev/null
 +++ b/scripts/screenshare/toggle.sh
 @@ -0,0 +1,153 @@
@@ -5354,7 +5474,7 @@ index 0000000..2174799
 +        ;;
 +esac
 diff --git a/services/Audio.qml b/services/Audio.qml
-index 68ebc3a..3230062 100644
+index 68ebc3ae..3230062e 100644
 --- a/services/Audio.qml
 +++ b/services/Audio.qml
 @@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
@@ -5466,7 +5586,7 @@ index 68ebc3a..3230062 100644
      function setDefaultSink(node) {
 diff --git a/services/LiquidGlass.qml b/services/LiquidGlass.qml
 new file mode 100644
-index 0000000..3f83582
+index 00000000..3f835820
 --- /dev/null
 +++ b/services/LiquidGlass.qml
 @@ -0,0 +1,67 @@
@@ -5539,7 +5659,7 @@ index 0000000..3f83582
 +}
 diff --git a/services/LyricsService.qml b/services/LyricsService.qml
 new file mode 100644
-index 0000000..1b52115
+index 00000000..1b521155
 --- /dev/null
 +++ b/services/LyricsService.qml
 @@ -0,0 +1,179 @@
@@ -5724,7 +5844,7 @@ index 0000000..1b52115
 +}
 \ No newline at end of file
 diff --git a/services/MprisController.qml b/services/MprisController.qml
-index 7faed22..0ce855f 100644
+index 7faed227..0ce855f7 100644
 --- a/services/MprisController.qml
 +++ b/services/MprisController.qml
 @@ -38,7 +38,13 @@ Singleton {
@@ -5744,7 +5864,7 @@ index 7faed22..0ce855f 100644
  	// Original stuff from fox below
 diff --git a/services/WorldClock.qml b/services/WorldClock.qml
 new file mode 100644
-index 0000000..2ce3206
+index 00000000..2ce32066
 --- /dev/null
 +++ b/services/WorldClock.qml
 @@ -0,0 +1,246 @@
@@ -5995,7 +6115,7 @@ index 0000000..2ce3206
 +    }))
 +}
 diff --git a/settings.qml b/settings.qml
-index 65c64c1..5cec268 100644
+index 65c64c16..5cec268a 100644
 --- a/settings.qml
 +++ b/settings.qml
 @@ -15,6 +15,7 @@ import qs.services
@@ -6007,7 +6127,7 @@ index 65c64c1..5cec268 100644
  ApplicationWindow {
      id: root
 diff --git a/shell.qml b/shell.qml
-index 13cf7af..0cd1a98 100644
+index 13cf7af4..0cd1a98a 100644
 --- a/shell.qml
 +++ b/shell.qml
 @@ -30,6 +30,7 @@ ShellRoot {

@@ -1,0 +1,19 @@
+#!/bin/bash
+# Keep the ESP GRUB cores in step with the installed GRUB modules.
+set -euo pipefail
+grub-install --target=x86_64-efi --efi-directory=/boot/efi \
+             --bootloader-id=cachyos --recheck
+grub-install --target=x86_64-efi --efi-directory=/boot/efi \
+             --removable --no-nvram
+# Keep the astronaut assets on the ESP for the FAT-only custom core.
+mkdir -p /boot/efi/grub/themes
+cp -a /usr/share/grub/themes/astronaut /boot/efi/grub/themes/
+# Rebuild the FAT-only core with its menu and graphics modules embedded.
+cfg=$(mktemp); out=$(mktemp)
+printf 'search.fs_uuid 0281-97BB root\nset prefix=($root)/grub\n' > "$cfg"
+grub-mkimage -O x86_64-efi -p '/grub' -c "$cfg" -o "$out" \
+  -d /usr/lib/grub/x86_64-efi fat part_gpt linux normal search search_fs_uuid echo sleep \
+  chain configfile test font efi_gop gfxterm gfxmenu png
+install -m 0700 "$out" /boot/efi/EFI/cachyos/grubx64-custom.efi
+rm -f "$cfg" "$out"
+echo "grub-resync: EFI cores updated to $(grub-install --version)"

@@ -8,14 +8,16 @@ import qs.modules.common.functions
 QuickToggleModel {
     id: root
     readonly property string script: FileUtils.trimFileProtocol(Directories.home) + "/Scripts/bin/hotspot"
+    property bool needsRestart: false
 
     name: Translation.tr("Hotspot")
     icon: "wifi_tethering"
-    tooltipText: Translation.tr("Sonder hotspot")
+    statusText: actionProcess.running ? Translation.tr("Please wait") : needsRestart ? Translation.tr("Restart required") : toggled ? Translation.tr("On") : Translation.tr("Off")
+    tooltipText: needsRestart ? Translation.tr("Restart hotspot") : Translation.tr("Hotspot")
     available: !actionProcess.running
     mainAction: () => {
         if (!actionProcess.running)
-            actionProcess.exec([root.script, root.toggled ? "stop" : "--daemon"])
+            actionProcess.exec([root.script, root.needsRestart ? "restart" : root.toggled ? "stop" : "--daemon"])
     }
 
     function refresh() {
@@ -35,7 +37,10 @@ QuickToggleModel {
     Process {
         id: statusProcess
         command: [root.script, "status"]
-        onExited: (exitCode, exitStatus) => root.toggled = exitCode === 0
+        onExited: (exitCode, exitStatus) => {
+            root.needsRestart = exitCode === 2
+            root.toggled = exitCode === 0 || root.needsRestart
+        }
     }
 
     Process {

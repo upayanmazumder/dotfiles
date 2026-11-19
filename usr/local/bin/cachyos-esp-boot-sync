@@ -1,0 +1,138 @@
+#!/bin/bash
+# Copy the installed linux-cachyos kernel and a minimal initramfs to the
+# inactive ESP boot slot, then make that slot the default GRUB entry.
+#
+# Design rules
+#   * the ESP slot selector controls the custom GRUB menu
+#   * /boot/grub/grub.cfg and the state file mirror that selection
+#   * staging happens on the big filesystem, never on the ESP
+#   * only the inactive slot is removed, and only after staging verifies
+#   * grub.cfg is generated to a temp file and renamed, so it is never partial
+#   * any failure leaves the active slot and the current grub.cfg untouched
+set -euo pipefail
+
+ESP="${ESP_ROOT_OVERRIDE:-/boot/efi}"
+BASE="$ESP/EFI/cachyos-boot"
+KERNEL=/boot/vmlinuz-linux-cachyos
+LEAN_CONF=/etc/mkinitcpio-lean.conf
+DEFGRUB="${DEFGRUB_OVERRIDE:-/etc/default/grub}"
+GRUBCFG="${GRUBCFG_OVERRIDE:-/boot/grub/grub.cfg}"
+ESPSELECTOR="$ESP/grub/slot.cfg"
+SKIP_CONFIG="${SKIP_CONFIG:-0}"
+STAGE_ROOT="${STAGE_ROOT:-/var/tmp}"
+
+[ -f "$KERNEL" ] || { echo "esp-boot: $KERNEL missing, nothing to do"; exit 0; }
+[ -d "$BASE" ]   || { echo "esp-boot: $BASE missing, nothing to do"; exit 0; }
+
+KVER="${KVER_OVERRIDE:-}"
+if [ -z "$KVER" ]; then
+  for d in /usr/lib/modules/*/; do
+    [ "$(cat "$d/pkgbase" 2>/dev/null)" = "linux-cachyos" ] && KVER="$(basename "$d")"
+  done
+fi
+[ -n "$KVER" ] || { echo "esp-boot: cannot determine linux-cachyos version"; exit 1; }
+
+# The /boot copy is created by the mkinitcpio hook from the package-owned file.
+# Refuse to pair a kernel with an initramfs from a different version.
+modk="/usr/lib/modules/$KVER/vmlinuz"
+if [ -f "$modk" ] && ! cmp -s "$KERNEL" "$modk"; then
+  echo "esp-boot: $KERNEL does not match $modk; refusing to touch the ESP"
+  exit 1
+fi
+
+# Which slot does GRUB actually boot? Read the published config.
+active="$(sed -n 's/^[[:space:]]*set default="cachyos-esp-\([ab]\)".*/\1/p' "$ESPSELECTOR" 2>/dev/null | tail -1 || true)"
+if [ -z "$active" ]; then
+  active="$(sed -n 's/^[[:space:]]*set default="cachyos-esp-\([ab]\)".*/\1/p' "$GRUBCFG" 2>/dev/null | tail -1 || true)"
+fi
+if [ -z "$active" ]; then
+  active="$(cat "$BASE/state" 2>/dev/null || true)"
+fi
+if [ -z "$active" ] || ! { [ "$active" = a ] || [ "$active" = b ]; }; then
+  if [ -d "$BASE/slot-a" ] || [ -d "$BASE/slot-b" ]; then
+    echo "esp-boot: cannot determine the active slot; refusing to touch the ESP"
+    exit 1
+  fi
+  active=none
+fi
+case "$active" in
+  a) inactive=b ;;
+  b) inactive=a ;;
+  *) inactive=a ;;
+esac
+slot="$BASE/slot-$inactive"
+
+stage="$(mktemp -d "$STAGE_ROOT/cachyos-esp-boot.XXXXXX")"
+trap 'rm -rf "$stage"' EXIT
+
+# --- 1. build off the ESP ---------------------------------------------------
+echo "esp-boot: building initramfs for $KVER (staging on $STAGE_ROOT)"
+mkinitcpio -c "$LEAN_CONF" -k "$KVER" -g "$stage/initramfs" >/dev/null
+cp -f "$KERNEL" "$stage/vmlinuz"
+
+# --- 2. verify the staged pair ----------------------------------------------
+[ -s "$stage/vmlinuz" ] || { echo "esp-boot: staged kernel is empty"; exit 1; }
+[ "$(stat -c %s "$stage/initramfs")" -gt 1048576 ] || {
+  echo "esp-boot: staged initramfs looks too small"; exit 1; }
+cmp -s "$stage/vmlinuz" "$KERNEL" || {
+  echo "esp-boot: staged kernel differs from $KERNEL"; exit 1; }
+
+# --- 3. free only the inactive slot -----------------------------------------
+need_kb=$(( ( $(stat -c %s "$stage/vmlinuz") + $(stat -c %s "$stage/initramfs") + 1023 ) / 1024 ))
+rm -rf "$slot"
+avail_kb=$(df -Pk "$ESP" | awk 'NR==2 {print $4}')
+if [ "$avail_kb" -lt "$need_kb" ]; then
+  echo "esp-boot: not enough space on ESP (need ${need_kb}KiB, have ${avail_kb}KiB); keeping slot $active"
+  exit 1
+fi
+
+# --- 4. fill the freed slot -------------------------------------------------
+mkdir -p "$slot"
+cp -f "$stage/initramfs" "$slot/initramfs"
+cp -f "$stage/vmlinuz"   "$slot/vmlinuz"
+sync
+cmp -s "$slot/vmlinuz" "$KERNEL" || {
+  echo "esp-boot: copy verification failed; slot $active is still active"
+  rm -rf "$slot"
+  exit 1
+}
+
+if [ "$SKIP_CONFIG" = "1" ]; then
+  echo "esp-boot: slot $inactive written (config switch skipped)"
+  exit 0
+fi
+
+# --- 5. publish the selector atomically -------------------------------------
+old_default="$(sed -n 's/^GRUB_DEFAULT=//p' "$DEFGRUB" | head -1)"
+restore_default() {
+  if [ -n "$old_default" ]; then
+    sed -i "s|^GRUB_DEFAULT=.*|GRUB_DEFAULT=${old_default}|" "$DEFGRUB"
+  fi
+}
+trap 'restore_default; rm -rf "$stage"' EXIT
+
+tmpcfg="$GRUBCFG.new"
+rm -f "$tmpcfg"
+if grep -q '^GRUB_DEFAULT=' "$DEFGRUB"; then
+  sed -i "s|^GRUB_DEFAULT=.*|GRUB_DEFAULT='cachyos-esp-$inactive'|" "$DEFGRUB"
+else
+  printf "GRUB_DEFAULT='cachyos-esp-%s'\n" "$inactive" >> "$DEFGRUB"
+fi
+if ! grub-mkconfig -o "$tmpcfg" >/dev/null 2>&1 \
+   || [ ! -s "$tmpcfg" ] \
+   || ! grep -q "id 'cachyos-esp-$inactive'" "$tmpcfg"; then
+  echo "esp-boot: grub-mkconfig failed; rolling back the default entry"
+  rm -f "$tmpcfg"
+  restore_default
+  exit 1
+fi
+mkdir -p "$(dirname "$ESPSELECTOR")"
+printf 'set default="cachyos-esp-%s"\n' "$inactive" > "$ESPSELECTOR.new"
+grub-script-check "$ESPSELECTOR.new"
+mv -f "$tmpcfg" "$GRUBCFG"
+mv -f "$ESPSELECTOR.new" "$ESPSELECTOR"
+sync
+echo "$inactive" > "$BASE/state"
+
+trap 'rm -rf "$stage"' EXIT
+echo "esp-boot: slot $inactive is now default (kernel $KVER)"

@@ -1,5 +1,7 @@
 import QtQuick
 import Quickshell
+import Quickshell.Hyprland
+import Quickshell.Io
 import qs.modules.common.functions
 pragma Singleton
 pragma ComponentBehavior: Bound
@@ -24,6 +26,49 @@ Singleton {
         depth: 0 // 2^0 = 1 color
         rescaleSize: 10
     }
+
+    // Read game mode from the compositor, which is the value the quick toggle
+    // writes. A config reload covers every change; the timer is a fallback for
+    // a reload event the shell did not see.
+    function refreshGameMode() {
+        if (!gameModeProc.running)
+            gameModeProc.running = true;
+    }
+
+    Process {
+        id: gameModeProc
+        command: ["hyprctl", "getoption", "-j", "animations:enabled"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const parsed = JSON.parse(text);
+                    const enabled = parsed.bool ?? parsed.int;
+                    if (enabled !== undefined)
+                        root.gameMode = !enabled;
+                } catch (error) {
+                    // hyprctl missing or Hyprland not running: keep the last value.
+                }
+            }
+        }
+    }
+
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            if (event.name === "configreloaded")
+                root.refreshGameMode();
+        }
+    }
+
+    Timer {
+        interval: 15000
+        repeat: true
+        running: true
+        onTriggered: root.refreshGameMode()
+    }
+
+    Component.onCompleted: root.refreshGameMode()
+
     property real wallpaperVibrancy: (wallColorQuant.colors[0]?.hslSaturation + wallColorQuant.colors[0]?.hslLightness) / 2
     property real autoBackgroundTransparency: { // y = 0.5768x^2 - 0.759x + 0.2896
         let x = wallpaperVibrancy
@@ -31,7 +76,12 @@ Singleton {
         return Math.max(0, Math.min(0.22, y)) - 0.12 * (m3colors.darkmode ? 0 : 1)
     }
     property real autoContentTransparency: 0.9
-    property bool liquidGlass: Config?.options.appearance.liquidGlass.enable ?? false
+    // Game mode turns animations, blur, shadows and rounding off to free the
+    // GPU. Glass refraction is the most expensive thing the shell draws, so it
+    // goes off with them. Game mode is the state the quick toggle leaves
+    // behind: `animations:enabled` off in the compositor.
+    property bool gameMode: false
+    property bool liquidGlass: (Config?.options.appearance.liquidGlass.enable ?? false) && !root.gameMode
     property bool hasAccent: (Config?.options.appearance.liquidGlass.accentColor ?? "") !== ""
     property color accent: !hasAccent ? colors.colPrimary
         : (!m3colors.darkmode && Qt.color(Config.options.appearance.liquidGlass.accentColor).hslLightness > 0.85) ? "#1A1A1A"

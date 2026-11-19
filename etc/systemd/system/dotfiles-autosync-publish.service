@@ -1,0 +1,21 @@
+[Unit]
+Description=Publish reviewed configuration from an isolated Git store
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=upayan
+Group=upayan
+Environment=HOME=/home/upayan
+Environment=GIT_TERMINAL_PROMPT=0
+ExecStart=/usr/bin/python3 /usr/local/lib/dotfiles-autosync/worker.py publish
+UMask=0077
+ProtectSystem=strict
+ReadWritePaths=/home/upayan/.local/state/dotfiles-autosync
+PrivateTmp=yes
+NoNewPrivileges=yes
+MemoryMax=256M
+MemorySwapMax=0
+CPUQuota=25%
+TimeoutStartSec=240

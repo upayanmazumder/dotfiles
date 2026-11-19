@@ -37,7 +37,8 @@
 # Usage:
 #   hotspot.sh          # foreground, Ctrl+C to stop
 #   hotspot.sh --daemon # background
-#   hotspot.sh status   # exit 0 while this interface's AP daemon is running
+#   hotspot.sh status   # 0: active, 1: stopped, 2: AP channel lost
+#   hotspot.sh restart  # restart the AP on the current upstream channel
 #   hotspot.sh stop     # stop a --daemon run
 # Configure two lines (SSID, then WPA passphrase) in
 # ~/.config/hotspot/credentials, owned by you and chmod 600. Never commit it.
@@ -72,6 +73,8 @@ if [ "${1:-}" = "status" ]; then
         [ "${argv[start]:-}" = "--daemon" ] || continue
         for ((i=start+1; i+1<${#argv[@]}; i++)); do
             if [ "${argv[i]}" = "$IFACE" ] && [ "${argv[i+1]}" = "$IFACE" ]; then
+                # A live daemon can remain after the radio loses its AP channel.
+                iw dev ap0 info 2>/dev/null | grep -q 'channel ' || exit 2
                 exit 0
             fi
         done
@@ -82,6 +85,11 @@ fi
 if [ "${1:-}" = "stop" ]; then
     run_create_ap --stop "$IFACE"
     exit $?
+fi
+
+if [ "${1:-}" = "restart" ]; then
+    "$0" stop
+    exec "$0" --daemon
 fi
 
 credentials_file="${XDG_CONFIG_HOME:-$HOME/.config}/hotspot/credentials"

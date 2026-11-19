@@ -547,7 +547,7 @@
             "type": "notifications"
           },
           {
-            "size": 1,
+            "size": 2,
             "type": "gameMode"
           },
           {
@@ -563,7 +563,7 @@
             "type": "musicRecognition"
           },
           {
-            "size": 1,
+            "size": 2,
             "type": "hotspot"
           }
         ]

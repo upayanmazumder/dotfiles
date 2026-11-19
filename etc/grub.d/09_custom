@@ -1,0 +1,46 @@
+#!/bin/sh
+set -eu
+. /etc/default/grub
+case "$GRUB_DEFAULT" in
+  cachyos-esp-a) active=a; previous=b ;;
+  cachyos-esp-b) active=b; previous=a ;;
+  *) echo 'Cannot determine active ESP slot' >&2; exit 1 ;;
+esac
+emit_slot() {
+    slot="$1"; title="$2"
+    cat <<ENTRY
+menuentry '$title' --class cachyos --class gnu-linux --id 'cachyos-esp-$slot' {
+    insmod part_gpt
+    insmod fat
+    search --no-floppy --fs-uuid --set=root 0281-97BB
+    linux /EFI/cachyos-boot/slot-$slot/vmlinuz root=UUID=4ee3417c-1618-45ac-9e95-463c34adf9e8 rw rootflags=subvol=@ ${GRUB_CMDLINE_LINUX:-} ${GRUB_CMDLINE_LINUX_DEFAULT:-}
+    initrd /EFI/cachyos-boot/slot-$slot/initramfs
+}
+ENTRY
+}
+emit_slot "$active" 'CachyOS Linux'
+cat <<'ENTRY'
+menuentry 'Windows Boot Manager' --class windows --id 'windows' {
+    insmod part_gpt
+    insmod fat
+    search --no-floppy --fs-uuid --set=root 0281-97BB
+    chainloader /EFI/Microsoft/Boot/bootmgfw.efi
+}
+submenu 'Recovery and advanced options' --id 'cachyos-recovery-options' {
+ENTRY
+emit_slot "$previous" 'Previous CachyOS kernel'
+cat <<'ENTRY'
+menuentry 'Emergency recovery (TTY)' --class cachyos --id 'cachyos-recovery' {
+    insmod part_gpt
+    insmod fat
+    search --no-floppy --fs-uuid --set=root 0281-97BB
+    linux /EFI/cachyos-recovery/vmlinuz-linux-cachyos root=UUID=4ee3417c-1618-45ac-9e95-463c34adf9e8 rootflags=subvol=@ rw systemd.unit=multi-user.target loglevel=4
+    initrd /EFI/cachyos-recovery/initramfs-linux-cachyos.img
+}
+submenu 'Original Btrfs boot entries' --id 'cachyos-original' {
+ENTRY
+sh /etc/grub.d/10_linux
+printf '}\n'
+sh /etc/grub.d/41_snapshots-btrfs
+sh /etc/grub.d/30_uefi-firmware
+printf '}\n'

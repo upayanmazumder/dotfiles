@@ -18,7 +18,7 @@ Never commit passwords, API keys, SSH private keys, signing keys, OAuth stores, 
 
 The live Zed settings contain a private API key, and the live rclone config contains a Google Drive client secret and token. Both files are tracked as sanitized copies: the Zed copy has an empty `context7_api_key` and a placeholder Ollama URL, and the rclone copy keeps the remote name and type only. Edit the live file to change the real values. Never copy either live file into the checkout. `sync-from-home.sh` refuses both paths. The rclone sync scripts contain no credentials and stay tracked as is.
 
-The hotspot script reads two lines from `~/.config/hotspot/credentials`: SSID, then passphrase. The file has mode `600` and stays outside Git. The Quickshell toggle calls `~/Scripts/bin/hotspot` with `status`, `stop`, and `--daemon`. There is no sleep-resume hook, because a root hook cannot read the user-owned credential safely. Restart the hotspot by hand after suspend.
+The hotspot script reads two lines from `~/.config/hotspot/credentials`: SSID, then passphrase. The file has mode `600` and stays outside Git. The Quickshell toggle uses `status`, `stop`, `restart`, and `--daemon`. Status returns `0` for an active AP, `1` when stopped, and `2` when the daemon loses its AP channel. The button offers restart for state `2`. Restart recomputes the current upstream channel. No automatic network or suspend hook restarts the hotspot.
 
 ## End-4 base
 
@@ -55,11 +55,13 @@ The glass comes from `shlok-shinde/nothing-liquid`. The shell material uses dotf
 
 End-4 remains the base. Do not run the upstream installer over this overlay. It also changes unrelated shell behavior. The selected widgets, their layout, the wallpaper, and existing shortcuts remain independent of the glass.
 
-`custom/general.lua` loads `custom/liquidglass.lua`. That file declares the plugin and applies the Clear and Regular presets to shell layers. `services/LiquidGlass.qml` synchronizes settings and the light or dark mode. It writes `~/.local/state/quickshell/user/generated/liquidglass.lua`. Do not track that generated file or the plugin binary.
+`custom/general.lua` loads `custom/liquidglass.lua`. That file loads the plugin and restores saved settings. `services/LiquidGlass.qml` applies settings immediately and writes `~/.local/state/quickshell/user/generated/liquidglass.lua`. Do not track that generated file or the plugin binary.
 
-Settings → Quick → Liquid glass controls refraction, tint, highlights, click glow, capsule groups, and sidebar modules. Desktop widgets use the upstream shell shader. They cannot use compositor layer glass because they share their surface with the wallpaper.
+Settings → Glass has separate controls for application windows and shell surfaces. Application settings apply globally, including terminals, browsers, messaging windows, and fullscreen windows. They control opacity, blur, grain, tint, colour, refraction, highlights, edges, and advanced glass effects. Three presets provide starting points. Individual controls allow custom settings. The frosted default obscures wallpaper detail behind text. Window controls do not change the explicit bar, dock, panel, or desktop widget presets.
 
-Darkly supplies Qt transparency through `kdeglobals` and `darklyrc`. Kitty uses `background_opacity 0.40`. Existing Qt windows can require reopening. Zed exposes glass through its transparent theme. Opaque browser and Electron content remains opaque. The old whole-window opacity rules are removed because they also faded text.
+The compositor controls application opacity. Kitty uses an opaque native background to avoid multiplying two independent transparency settings. Existing Kitty windows can require a configuration reload. Game mode disables glass and forces compositor opacity to `1`. Disabling game mode restores the selected window settings. The button reads actual compositor state instead of assigning an optimistic toggle value.
+
+Darkly supplies Qt transparency through `kdeglobals` and `darklyrc`. Zed can also expose glass through its transparent theme. Whole-window opacity makes opaque application content translucent too, including its text. Increase opacity in Settings when text needs more contrast.
 
 ### Build the plugin
 
@@ -79,7 +81,9 @@ strip --strip-debug -o "$HOME/.local/lib/nothing-liquid/hyprglass.so.new" "$src/
 mv "$HOME/.local/lib/nothing-liquid/hyprglass.so.new" "$HOME/.local/lib/nothing-liquid/hyprglass.so"
 ```
 
-Rebuild after a Hyprland update. Do not bypass the plugin's ABI guard. A newer Hyprland API can require a newer compatible source revision. Save application work before restarting Hyprland to load a rebuilt plugin.
+Rebuild after updates to Hyprland or its libraries, including hyprutils. Do not bypass the plugin's ABI guard. Save application work before restarting Hyprland.
+
+Always declare `hl.plugin.load(plugin)` when the plugin file exists. Do not condition that declaration on `hl.plugin.hyprglass` being absent. Hyprland reconciles declarations after each configuration load. The conditional declaration caused repeated plugin unloads and reloads, then a crash.
 
 Check the deployed configuration with `Hyprland --verify-config -c ~/.config/hypr/hyprland.lua`. Check `hyprctl configerrors` after a reload. `hyprctl -j hyprglass status` must report an active plugin, matching version, ready shaders, and active window and layer features.
 
@@ -94,3 +98,57 @@ The tracked Hyprlock configuration uses a solid background. The private photogra
 Hyprlock media helpers use `playerctl`, ImageMagick (`magick`), and `curl`. End-4 may supply them. Verify them before enabling the helpers.
 
 The system mirror does not contain the third-party GRUB theme `astronaut`, the SDDM theme `pixel-night-city`, or the SKLauncher JAR. Review these dependencies before installing the related files on another machine. The conflicting GPU drop-in is archived. The new driver mask applies after a reload or reboot, not to the running driver.
+
+## Custom GRUB and ESP slots
+
+Firmware entry `0002` loads `EFI/cachyos/grubx64-custom.efi`. Its prefix points to `/grub` on ESP UUID `0281-97BB`.
+The active menu is `/boot/efi/grub/grub.cfg`, not `/boot/grub/grub.cfg`.
+The menu reads `/boot/efi/grub/slot.cfg`. It currently selects `cachyos-esp-b`.
+
+`usr/local/bin/cachyos-esp-boot-sync` publishes kernels to the inactive slot and updates both selectors.
+Its Pacman hook runs after `linux-cachyos` updates. Keep both slots and the recovery entry.
+`cachyos-grub-resync` embeds FAT, graphics, font, PNG, and Windows chainloader modules in the custom EFI image.
+It copies existing astronaut assets to `/boot/efi/grub/themes/astronaut`.
+The theme assets, kernels, initramfs files, and EFI binaries remain outside Git.
+
+The firmware order starts with custom GRUB, then Windows, then the older CachyOS loader.
+HP firmware can append device entries. Do not delete those entries to enforce a cosmetic list.
+Do not run `grub-install` or regenerate the custom setup merely to deploy these mirrors.
+Review the UUIDs and preserve the installed files before any boot deployment.
+The normal `apply.sh --configs` mode skips boot scripts, boot hooks, boot defaults, and `boot/`.
+Sonder keeps vendor generators `10_linux`, `30_os-prober`, `30_uefi-firmware`, `31_efi_bootnext`, and `41_snapshots-btrfs` non-executable.
+The custom generator invokes selected vendor generators explicitly. Preserve these modes when restoring the setup.
+
+## Automatic synchronization and agent changes
+
+The standing rule in `home/.agents/AGENTS.md` covers AI-agent edits, not only package updates.
+Agents must mirror relevant changes, verify them, scan for secrets, commit, and push during the same task.
+Ask before adding a file when its relevance or publication safety is ambiguous.
+
+`etc/dotfiles-autosync.json` lists reviewed live paths and repository destinations.
+Systemd watches those files and collects changes after writes. A minute timer retries missed events and failed publication.
+Unknown paths require review and explicit enrollment. The collector never copies entire directories or deletes missing files from Git.
+Credential checks, symlink rejection, size limits, and Gitleaks block unsafe snapshots.
+The collector runs root-owned installed code. The publisher runs as `upayan`, with a 256 MiB memory limit and no swap.
+
+Publication uses an isolated bare repository under `~/.local/state/dotfiles-autosync/repo.git`.
+It does not modify this checkout, its index, or pending edits. It never force-pushes.
+Concurrent remote changes to managed files block publication until reviewed. Network failures retain the snapshot for another attempt.
+Fetch and merge `origin/main` before subsequent work when the publisher advanced the remote.
+Do not overwrite remote edits with stale live copies.
+
+Install the reviewed worker as `/usr/local/lib/dotfiles-autosync/worker.py`.
+Install Gitleaks there as `gitleaks`, owned by root.
+Install the JSON manifest in `/etc` and the `dotfiles-autosync*` units in `/etc/systemd/system`.
+Create `~/.local/state/dotfiles-autosync` as `upayan` before starting the publisher.
+Enable `dotfiles-autosync.path` and `dotfiles-autosync.timer` after `systemctl daemon-reload`.
+Inspect failures with `journalctl -u 'dotfiles-autosync-*'`.
+No credentials belong in the manifest. Git uses the user's existing credential helper.
+
+## Memory-pressure incident
+
+At 01:49:37 on 2026-11-20, the kernel killed `omp` PID 21927 after global memory exhaustion.
+It held 6,590,160 KiB of anonymous RAM and 6,468,514 swapped pages. Free swap reached 192 KiB.
+The desktop stalled during memory reclaim. Memory recovered after the kill.
+The journal does not identify the allocation that caused OMP's growth. It provides no GPU-reset evidence for that interval.
+Do not attribute this incident to GRUB or the corrected Hyprland plugin declaration.

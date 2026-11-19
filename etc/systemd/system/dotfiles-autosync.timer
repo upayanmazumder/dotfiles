@@ -1,0 +1,11 @@
+[Unit]
+Description=Retry reviewed configuration synchronization after missed events
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=1min
+AccuracySec=5s
+Unit=dotfiles-autosync-collect.service
+
+[Install]
+WantedBy=timers.target

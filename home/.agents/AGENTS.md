@@ -23,3 +23,21 @@ Use Context7 MCP to fetch current documentation whenever the user asks about a l
 
 Do not use for: refactoring, writing scripts from scratch, debugging business logic, code review, or general programming concepts.
 <!-- context7 -->
+
+<!-- dotfiles-tracking -->
+# Track relevant system changes
+
+The dotfiles repository is `$HOME/dev/upayanmazumder/dotfiles`.
+This rule applies to every AI-agent change, not only package updates.
+
+- Mirror relevant persistent system and desktop changes in that repository during the same task.
+- Include edited services, hooks, boot scripts, agent rules, and deployment instructions when relevant.
+- Preserve unrelated repository changes.
+- Never publish credentials, private state, generated caches, kernel images, EFI binaries, or unlicensed personal assets.
+- Use the reviewed synchronization allowlist for automatic imports.
+- Ask the user before adding a path when its relevance or publication safety is ambiguous.
+- Verify changed behavior and scan the selected changes for secrets before committing.
+- Commit the task changes and push them immediately to `origin/main`, unless the user explicitly requests otherwise.
+- Never force-push or overwrite concurrent remote changes.
+- If publication fails, preserve the changes and report the failure.
+<!-- dotfiles-tracking -->

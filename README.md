@@ -21,6 +21,12 @@ Edit a file in `home/` or `etc/` and test it on the machine. Both sync scripts s
 
 Keep private data outside Git. The hotspot reads its SSID and password from `~/.config/hotspot/credentials`, which must have mode `600`. The tracked Zed settings and rclone config omit the Context7 key, the Ollama URL, and the Google Drive credentials. Review every diff and scan the repository before publishing changes.
 
+AI agents must record relevant system changes here and push them during the same task.
+They must ask before including ambiguous paths.
+Sonder also watches reviewed paths through `dotfiles-autosync.path`.
+The isolated publisher pushes safe snapshots without changing this checkout.
+See `docs/config-management.md` for the allowlist, failure handling, and custom GRUB setup.
+
 ## What is not tracked
 
 Credentials, API keys, SSH keys, kubeconfigs, Wi-Fi profiles, browser and Electron profiles, shell history, caches, application databases, `sudoers.d`, and `machine-id` stay on the machine. A few files are tracked with the secret removed. `home/setup-hotspot.sh` has a `CHANGE_ME_MIN_8_CHARS` placeholder, and `home/.config/plasma-nm` omits the hotspot password. The hotspot needs a sudoers rule for `create_ap`, which I do not publish. Wallpapers are not tracked either, but `config.json` refers to one by path.

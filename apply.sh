@@ -107,6 +107,11 @@ apply_etc() {
     [ -d "$SCRIPT_DIR/$tree" ] || continue
     while IFS= read -r src; do
       rel="${src#"$SCRIPT_DIR"/}"
+      case "$rel" in
+        etc/default/grub|etc/mkinitcpio-lean.conf|etc/grub.d/*|etc/pacman.d/hooks/zz-cachyos-*|usr/local/bin/cachyos-*)
+          log "  skipped boot-managed $rel (separate host-specific review required)"
+          continue ;;
+      esac
       dest="/$rel"
       if sudo test -e "$dest" || sudo test -L "$dest"; then
         if sudo cmp -s "$src" "$dest"; then

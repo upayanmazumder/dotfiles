@@ -1,0 +1,10 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = linux-cachyos
+
+[Action]
+Description = Syncing CachyOS kernel to inactive ESP boot slot...
+When = PostTransaction
+Exec = /usr/local/bin/cachyos-esp-boot-sync
