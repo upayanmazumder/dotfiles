@@ -1,0 +1,9 @@
+{
+  "name": "com.0xc0dedbad.kdeconnect_chrome",
+  "description": "KDE Connect native messaging host",
+  "path": "/home/upayan/.config/thorium/NativeMessagingHosts/com.0xc0dedbad.kdeconnect_chrome",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://bdlhicpempabeliieeiehehfbaopafcf/"
+  ]
+}
