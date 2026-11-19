@@ -7,6 +7,9 @@ cd "$ROOT_DIR"
 printf '%s\n' '== Shell syntax =='
 find . \( -path './.git' -o -path './.apply-backups' \) -prune -o -type f -name '*.sh' -print0 \
     | xargs -0 -r -n1 bash -n
+
+printf '%s\n' '== Release version tests =='
+bash tests/release-version.sh
 printf '%s\n' '== Python tests =='
 python3 -B -m unittest discover -s scripts/sync -p 'test_*.py' -v
 

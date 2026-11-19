@@ -29,14 +29,16 @@ See `docs/config-management.md` for the allowlist, failure handling, and custom 
 
 ## Tests and releases
 
-Run `./tests/ci.sh` before you push changes. It checks shell syntax, Python tests, and Plymouth unit tests.
+Run `./tests/ci.sh` before you push changes. It checks shell syntax, release tags, Python tests, and Plymouth unit tests.
 GitHub Actions runs the same checks for pull requests, pushes to `main`, and version tags.
 
-Use annotated Semantic Versioning tags such as `v0.1.0`. Push a tag to run the checks and create a GitHub release with generated notes:
+Use annotated Semantic Versioning tags such as `v0.1.0`. A tag push runs the checks and creates a GitHub release with generated notes.
+Use `-alpha.N`, `-beta.N`, or `-rc.N` for a non-production release. The workflow marks it as a prerelease and adds a warning.
+Do not use a stable tag until the configuration is production-ready.
 
 ```sh
-git tag -a v0.1.0 -m "Release v0.1.0"
-git push origin v0.1.0
+git tag -a v0.1.0-rc.1 -m "Pre-release v0.1.0-rc.1"
+git push origin v0.1.0-rc.1
 ```
 
 This repository tracks one frequently changing machine. It does not define long-term support releases.
