@@ -1,7 +1,7 @@
 {
   "remote": "https://github.com/upayanmazumder/dotfiles.git",
   "email": "upayanm3@gmail.com",
-  "baseline": "1ce4fb766ad7d315825328d7dd479fe0daa3c34c",
+  "baseline": "31b6f3a5b9190cb75d8b705ddd7bfbb031158f76",
   "paths": {
     "/etc/default/grub": "etc/default/grub",
     "/etc/grub.d/09_custom": "etc/grub.d/09_custom",
