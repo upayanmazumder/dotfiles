@@ -152,3 +152,21 @@ It held 6,590,160 KiB of anonymous RAM and 6,468,514 swapped pages. Free swap re
 The desktop stalled during memory reclaim. Memory recovered after the kill.
 The journal does not identify the allocation that caused OMP's growth. It provides no GPU-reset evidence for that interval.
 Do not attribute this incident to GRUB or the corrected Hyprland plugin declaration.
+
+## Tailscale DNS
+
+NetworkManager uses `dns=systemd-resolved`. `/etc/resolv.conf` must link to `/run/systemd/resolve/stub-resolv.conf`, not remain a regular file.
+
+Repair the link:
+
+```sh
+sudo ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+sudo systemctl restart systemd-resolved
+sudo systemctl restart NetworkManager
+sudo systemctl restart tailscaled
+```
+
+Restarting NetworkManager briefly interrupts network connections. Restart Tailscale last so it detects the repaired configuration.
+Changing preferences with `tailscale up` does not repeat DNS manager detection.
+
+Check `tailscale status` for health warnings. Test a peer with `getent ahostsv4 PEER` and `tailscale ping --c 1 PEER`.
