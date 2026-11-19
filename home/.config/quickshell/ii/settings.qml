@@ -30,6 +30,11 @@ ApplicationWindow {
             component: "modules/settings/QuickConfig.qml"
         },
         {
+            name: Translation.tr("Glass"),
+            icon: "water_drop",
+            component: "modules/settings/GlassConfig.qml"
+        },
+        {
             name: Translation.tr("General"),
             icon: "browse",
             component: "modules/settings/GeneralConfig.qml"

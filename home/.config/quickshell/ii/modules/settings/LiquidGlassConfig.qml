@@ -7,17 +7,17 @@ import qs.modules.common.functions
 
 ContentSection {
     icon: "water_drop"
-    title: Translation.tr("Liquid glass")
+    title: Translation.tr("Shell glass")
 
     ConfigSwitch {
         buttonIcon: "blur_on"
-        text: Translation.tr("Liquid glass")
+        text: Translation.tr("Shell glass")
         checked: Config.options.appearance.liquidGlass.enable
         onCheckedChanged: {
             Config.options.appearance.liquidGlass.enable = checked;
         }
         StyledToolTip {
-            text: Translation.tr("Glass windows, bar, dock and panels, drawn by the compositor")
+            text: Translation.tr("Glass on the bar, dock, panels and other shell surfaces. Application windows are configured separately on this page")
         }
     }
 

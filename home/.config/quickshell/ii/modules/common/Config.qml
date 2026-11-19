@@ -153,6 +153,46 @@ Singleton {
                     property bool nearReflection: true
                     property bool capsuleBar: false
                     property bool modularSidebar: true
+                    property JsonObject windows: JsonObject {
+                        property bool enable: true
+                        property real activeOpacity: 0.90
+                        property real inactiveOpacity: 0.90
+                        property real fullscreenOpacity: 0.90
+                        property real blurStrength: 2.5
+                        property int blurIterations: 3
+                        property real noiseStrength: 0.02
+                        property real refractionStrength: 0.6
+                        property real refractionFlow: 0
+                        property real refractionSpread: 1
+                        property real chromaticAberration: 0.15
+                        property real fresnelStrength: 0.6
+                        property real fresnelTint: 0
+                        property string fresnelColor: "#FFFFFF00"
+                        property real specularStrength: 0.8
+                        property real specularAngle: 315
+                        property real bevelStrength: 0
+                        property string bevelColor: "#FFFFFF00"
+                        property real bevelShadow: 0
+                        property real glassOpacity: 1
+                        property real edgeThickness: 0.06
+                        property real edgeThicknessPx: 0
+                        property real edgeHeight: 0
+                        property real fresnelReflection: 0
+                        property string tintColor: "#10182066"
+                        property real lensDistortion: 0.5
+                        property real selfSample: 0
+                        property bool xray: true
+                        property real focusLight: 0
+                        property string focusLightColor: "#FFFFFF00"
+                        property real frost: 0
+                        property real frostBlur: 3
+                        property real brightness: 0.78
+                        property real contrast: 0.95
+                        property real saturation: 0.85
+                        property real vibrancy: 0.1
+                        property real adaptiveDim: 0.3
+                        property real adaptiveBoost: 0
+                    }
                 }
             }
 
