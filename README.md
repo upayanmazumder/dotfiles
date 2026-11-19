@@ -27,6 +27,20 @@ Sonder also watches reviewed paths through `dotfiles-autosync.path`.
 The isolated publisher pushes safe snapshots without changing this checkout.
 See `docs/config-management.md` for the allowlist, failure handling, and custom GRUB setup.
 
+## Tests and releases
+
+Run `./tests/ci.sh` before you push changes. It checks shell syntax, Python tests, and Plymouth unit tests.
+GitHub Actions runs the same checks for pull requests, pushes to `main`, and version tags.
+
+Use annotated Semantic Versioning tags such as `v0.1.0`. Push a tag to run the checks and create a GitHub release with generated notes:
+
+```sh
+git tag -a v0.1.0 -m "Release v0.1.0"
+git push origin v0.1.0
+```
+
+This repository tracks one frequently changing machine. It does not define long-term support releases.
+
 ## What is not tracked
 
 Credentials, API keys, SSH keys, kubeconfigs, Wi-Fi profiles, browser and Electron profiles, shell history, caches, application databases, `sudoers.d`, and `machine-id` stay on the machine. A few files are tracked with the secret removed. `home/setup-hotspot.sh` has a `CHANGE_ME_MIN_8_CHARS` placeholder, and `home/.config/plasma-nm` omits the hotspot password. The hotspot needs a sudoers rule for `create_ap`, which I do not publish. Wallpapers are not tracked either, but `config.json` refers to one by path.
