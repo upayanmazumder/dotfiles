@@ -88,3 +88,11 @@ Check the host without a browser. A device list proves the D-Bus link works:
 ```
 
 Device choice stays in extension storage. Set a default device in the extension options, or leave it unset to pick a device for each share.
+
+Chromium sizes the popup from the document width. The upstream popup uses nowrap device rows and no width, so the popup collapsed to a narrow strip and clipped its content. A tracked note: the local patch adds `min-width: 340px` to `css/popup.css` in the installed extension.
+
+```css
+html, body { min-width: 340px; }
+```
+
+The original file is at `~/.local/state/kdeconnect-ext-fix-20261120/popup.css.orig`. An extension update replaces `css/popup.css`, so reapply the rule after a version change.
