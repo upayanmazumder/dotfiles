@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Screen sharing toggle for Hyprland / wayvnc.
+# The VNC server binds only the current Tailscale IPv4 address, so the session
+# is reachable from the tailnet and nowhere else.
 # Usage: toggle.sh toggle|start|stop|status
 set -uo pipefail
 
@@ -7,6 +9,30 @@ PORT=5900
 RUNTIME="${XDG_RUNTIME_DIR:-/tmp}"
 PIDFILE="$RUNTIME/screenshare.pid"
 LOG="$RUNTIME/screenshare.log"
+
+fail() {
+    local msg="$1"
+    local tail_log
+    tail_log=$(tail -n 5 "$LOG" 2>/dev/null)
+    notify-send -u critical "Screen sharing failed" "$msg"$'\n'"$tail_log" 2>/dev/null
+    printf 'error: %s\n%s\n' "$msg" "$tail_log" >&2
+    exit 1
+}
+
+# Print the Tailscale IPv4 address, or fail when Tailscale is not running.
+tailscale_ip() {
+    local state ip
+    state=$(tailscale status --json 2>/dev/null |
+        python3 -c 'import json, sys
+try:
+    print(json.load(sys.stdin).get("BackendState", ""))
+except Exception:
+    print("")' 2>/dev/null)
+    [ "$state" = "Running" ] || return 1
+    ip=$(tailscale ip -4 2>/dev/null | head -1)
+    [ -n "$ip" ] || return 1
+    printf '%s' "$ip"
+}
 
 get_output() {
     hyprctl monitors -j 2>/dev/null | python3 -c '
@@ -20,47 +46,32 @@ if not names:
     names = [m["name"] for m in monitors if not m.get("disabled")]
 if names:
     print(names[0])
+    sys.exit(0)
+sys.exit(1)
 ' 2>/dev/null
 }
 
-get_ip() {
-    local ip
-    ip=$(ip -4 -o addr show dev ap0 scope global 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -1)
-    if [ -z "$ip" ]; then
-        ip=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i=="src") {print $(i+1); exit}}')
-    fi
-    if [ -z "$ip" ]; then
-        ip=$(ip -4 -o addr show scope global 2>/dev/null | awk '$2 != "tailscale0" {print $4}' | cut -d/ -f1 | head -1)
-    fi
-    echo "${ip:-127.0.0.1}"
-}
-
 url() {
-    echo "vnc://$(get_ip):$PORT"
+    local ip
+    ip=$(tailscale_ip) || return 1
+    printf 'vnc://%s:%s' "$ip" "$PORT"
 }
 
-# Port listening AND our recorded process alive.
+# Our recorded process is alive and the exact tailnet listener exists.
 is_running() {
-    ss -ltn 2>/dev/null | grep -q ":$PORT " || return 1
     [ -f "$PIDFILE" ] || return 1
-    local pid
+    local pid ip
     pid=$(cat "$PIDFILE" 2>/dev/null)
     [ -n "$pid" ] || return 1
     kill -0 "$pid" 2>/dev/null || return 1
+    ip=$(tailscale_ip) || return 1
+    ss -ltnH "sport = :$PORT" 2>/dev/null |
+        awk '{print $4}' | grep -qx "$ip:$PORT" || return 1
     return 0
 }
 
 port_busy() {
-    ss -ltn 2>/dev/null | grep -q ":$PORT "
-}
-
-fail() {
-    local msg="$1"
-    local tail_log
-    tail_log=$(tail -n 5 "$LOG" 2>/dev/null)
-    notify-send -u critical "Screen sharing failed" "$msg"$'\n'"$tail_log" 2>/dev/null
-    printf 'error: %s\n%s\n' "$msg" "$tail_log" >&2
-    exit 1
+    ss -ltnH "sport = :$PORT" 2>/dev/null | grep -q .
 }
 
 start() {
@@ -69,18 +80,20 @@ start() {
         url
         return 0
     fi
+    local ip
+    if ! ip=$(tailscale_ip); then
+        fail "Tailscale is not running, so the tailnet address is unavailable"
+    fi
+    local output
+    if ! output=$(get_output); then
+        fail "No active Hyprland session was found"
+    fi
     if port_busy; then
         fail "port $PORT is already in use by another process"
     fi
 
-    local output
-    output=$(get_output)
     : > "$LOG"
-    if [ -n "$output" ]; then
-        nohup wayvnc -o "$output" "0.0.0.0:$PORT" >>"$LOG" 2>&1 &
-    else
-        nohup wayvnc "0.0.0.0:$PORT" >>"$LOG" 2>&1 &
-    fi
+    nohup wayvnc -o "$output" "$ip:$PORT" >>"$LOG" 2>&1 &
     local pid=$!
     echo "$pid" > "$PIDFILE"
 
@@ -88,7 +101,16 @@ start() {
         if ! kill -0 "$pid" 2>/dev/null; then
             break
         fi
-        if ss -ltn 2>/dev/null | grep -q ":$PORT "; then
+        if ss -ltnH "sport = :$PORT" 2>/dev/null | awk '{print $4}' | grep -qx "$ip:$PORT"; then
+            # WayVNC 0.10 fills capture buffers only after a
+            # zwlr_output_power_v1 event, and Hyprland sends that event only
+            # on a real DPMS change made while a client has started capture.
+            # warmup.py provides that client and cycles DPMS; it is dropped
+            # during the cycle, so later clients receive live frames.
+            SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+            if ! timeout 20 python3 "$SCRIPT_DIR/warmup.py" "$ip" "$PORT" >>"$LOG" 2>&1; then
+                printf 'warmup failed; capture may stay blank until the next display power change\n' >>"$LOG"
+            fi
             local u
             u=$(url)
             notify-send "Screen sharing on" "$u" 2>/dev/null
@@ -104,7 +126,7 @@ start() {
 
     kill "$pid" 2>/dev/null
     rm -f "$PIDFILE"
-    fail "wayvnc did not open port $PORT (output: ${output:-default})"
+    fail "wayvnc did not open $ip:$PORT (output: ${output:-default})"
 }
 
 stop() {

@@ -170,3 +170,49 @@ Restarting NetworkManager briefly interrupts network connections. Restart Tailsc
 Changing preferences with `tailscale up` does not repeat DNS manager detection.
 
 Check `tailscale status` for health warnings. Test a peer with `getent ahostsv4 PEER` and `tailscale ping --c 1 PEER`.
+
+## Remote access
+
+Sonder advertises Tailscale SSH on the tailnet and also runs Tailscale on Tailscale IP `100.94.169.60`, hostname `sonder.tail92723c.ts.net`.
+Sonder no longer accepts subnet routes. `RouteAll` is false, no exit node is set, and no routes are advertised.
+Normal internet traffic keeps the wlan0 default route.
+
+OpenSSH listens only on loopback port 22 and the two Tailscale addresses on port 2222, from `etc/ssh/sshd_config.d/10-sonder-tailnet.conf`.
+Tailscale SSH keeps tailnet port 22. `etc/systemd/system/sshd.service.d/10-tailscale.conf` orders sshd after tailscaled so the tailnet addresses exist at boot.
+UFW allows TCP 2222 and 5900 only on `tailscale0`. KDE Connect and hotspot rules stay unchanged.
+
+Add the Android public key to `~/.ssh/authorized_keys`. Keep password authentication until a phone key login succeeds, then set `PasswordAuthentication no` in the same drop-in.
+
+Development servers reach the phone through foreground Tailscale Serve raw TCP forwarding:
+
+```sh
+tailscale serve --tcp=13000 tcp://127.0.0.1:3000
+tailscale serve --tcp=15173 tcp://127.0.0.1:5173
+tailscale serve --tcp=18000 tcp://127.0.0.1:8000
+tailscale serve --tcp=18080 tcp://127.0.0.1:8080
+```
+
+Stop each with Ctrl+C. Do not use Funnel or `--bg`. Bind development servers to `127.0.0.1`.
+
+`scripts/screenshare/toggle.sh` binds WayVNC to the current Tailscale address only and serves VeNCrypt TLS on 5900.
+WayVNC 0.10 fills capture buffers only after a `zwlr_output_power_v1` event, and Hyprland emits that event only on a real DPMS change.
+`warmup.py` connects with the wayvnc credentials, cycles DPMS, and exits; WayVNC serves live frames to later clients.
+Without the warm-up a client sees a uniform grey frame. The warm-up briefly blanks the local display.
+WayVNC credentials and TLS files stay in `~/.config/wayvnc/` and are never tracked.
+
+Taildrop files arrive with `tailscale file get --conflict=rename ~/Downloads/Taildrop`.
+Syncthing is not installed because the official Android app is discontinued. Jellyfin is not installed.
+
+The VPS is reachable at `100.96.250.81` with the existing Hetzner key. The k3s API listens on 6443. No Raspberry Pi appears on the tailnet.
+
+Rollback:
+
+```sh
+tailscale set --accept-routes=true          # restore subnet-route acceptance
+sudo rm /etc/ssh/sshd_config.d/10-sonder-tailnet.conf
+sudo rm -rf /etc/systemd/system/sshd.service.d
+sudo systemctl daemon-reload && sudo systemctl restart sshd
+sudo ufw delete allow in on tailscale0 to any port 2222 proto tcp
+sudo ufw delete allow in on tailscale0 to any port 5900 proto tcp
+sudo ufw allow 5900/tcp                     # only to restore previous LAN VNC access
+```
