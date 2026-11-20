@@ -222,10 +222,10 @@ ttf-cascadia-code-nerd
 ttf-dejavu
 ttf-fira-code
 ttf-liberation
-typst
 ttf-meslo-nerd
 ttf-opensans
 ttf-ubuntu-font-family
+typst
 ufw
 ufw-extras
 unrar
