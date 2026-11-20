@@ -61,7 +61,7 @@
       "tint": 0.1,
       "tintAmount": 0.6,
       "windows": {
-        "activeOpacity": 0.78,
+        "activeOpacity": 0.64,
         "adaptiveBoost": 0,
         "adaptiveDim": 0,
         "bevelColor": "#FFFFFF00",
@@ -69,7 +69,7 @@
         "bevelStrength": 0.4,
         "blurIterations": 3,
         "blurStrength": 2,
-        "brightness": 1.08,
+        "brightness": 1.2,
         "chromaticAberration": 0.15,
         "contrast": 1,
         "edgeHeight": 0,
@@ -86,7 +86,7 @@
         "frostBlur": 2.5,
         "fullscreenOpacity": 0.9,
         "glassOpacity": 1,
-        "inactiveOpacity": 0.76,
+        "inactiveOpacity": 0.62,
         "lensDistortion": 0.5,
         "noiseStrength": 0.008,
         "refractionFlow": 0,
@@ -96,7 +96,7 @@
         "selfSample": 0,
         "specularAngle": 360,
         "specularStrength": 1,
-        "tintColor": "#DDEEFF06",
+        "tintColor": "#EEF6FF28",
         "vibrancy": 0.18,
         "xray": true
       }
