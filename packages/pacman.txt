@@ -147,6 +147,7 @@ openlinkhub
 openrgb
 openssh
 pacman-contrib
+pandoc-cli
 papirus-icon-theme
 paru
 perl
@@ -221,6 +222,7 @@ ttf-cascadia-code-nerd
 ttf-dejavu
 ttf-fira-code
 ttf-liberation
+typst
 ttf-meslo-nerd
 ttf-opensans
 ttf-ubuntu-font-family
