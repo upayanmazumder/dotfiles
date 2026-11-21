@@ -127,6 +127,19 @@ The normal `apply.sh --configs` mode skips boot scripts, boot hooks, boot defaul
 Sonder keeps vendor generators `10_linux`, `30_os-prober`, `30_uefi-firmware`, `31_efi_bootnext`, and `41_snapshots-btrfs` non-executable.
 The custom generator invokes selected vendor generators explicitly. Preserve these modes when restoring the setup.
 
+## Windows and Linux clock
+
+Windows and CachyOS share the hardware clock. CachyOS stores UTC and displays `Asia/Kolkata`. Windows uses `India Standard Time`.
+Windows previously lacked `RealTimeIsUniversal`, so it interpreted UTC as local time. This causes a 5½-hour error after switching systems.
+
+`scripts/windows/hardware-clock-utc.reg` makes Windows interpret the hardware clock as UTC. Import it from an administrator session in Windows.
+Keep Linux configured with `RTC in local TZ: no`. Keep network time synchronization enabled in both systems.
+The Windows Time service already uses automatic delayed start, with its NTP client enabled and `time.windows.com,0x9` configured.
+
+For an offline repair, check the active control set under `SYSTEM\Select`. Use that numbered control set instead of `CurrentControlSet`.
+Do not write to a hibernated Windows volume. Save a private backup of the SYSTEM hive before changing it.
+Never commit registry hives or their backups. After the next Windows boot, check the clock before manually requesting synchronization.
+
 ## Automatic synchronization and agent changes
 
 The standing rule in `home/.agents/AGENTS.md` covers AI-agent edits, not only package updates.
