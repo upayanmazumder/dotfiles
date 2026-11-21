@@ -59,13 +59,15 @@ End-4 remains the base. Do not run the upstream installer over this overlay. It 
 
 Settings → Glass has separate controls for application windows and shell surfaces. Application settings apply globally, including terminals, browsers, messaging windows, and fullscreen windows. They control opacity, blur, grain, tint, colour, refraction, highlights, edges, and advanced glass effects. Balanced, Frosted, and Clear presets provide starting points. Individual controls allow custom settings. Balanced is the default. Select Frosted to add stronger blur, grain, tint, and frost. Window controls do not change the explicit bar, dock, panel, or desktop widget presets.
 
-The saved window settings use light glass instead of the darker defaults. Active opacity is `0.64` and inactive opacity is `0.62`. Fullscreen opacity remains `0.90`. Blur uses strength `2` with three iterations. Brightness is `1.20` and saturation is `1.08`. Adaptive dimming, self-sampling, and frost are disabled. Grain is `0.008`, and the pale tint has alpha `28`. These settings preserve background colour instead of mixing dark application content into the glass.
+The saved window settings prioritize readable app content. Active opacity is `0.94` and inactive opacity is `0.92`. Fullscreen opacity remains `0.90`. Blur uses strength `2` with three iterations. Brightness is `1.00` and saturation is `1.08`. Adaptive dimming, self-sampling, and frost are disabled. Grain is `0.008`, and the pale tint has alpha `08`. The former `0.64` opacity faded text and controls. Its `1.20` brightness and stronger pale tint also reduced contrast against bright wallpaper.
 
 Before the appearance change, the live configuration was copied to `~/.local/state/glass-backups/20261120-194704/config.json`. Backups remain local because the full configuration can contain private state. Shell glass settings and the plugin binary remain unchanged.
 
 The later native transparency change has backups in `~/.local/state/glass-backups/20261120-native/`. This directory contains the preceding Kitty and shell configuration files.
 
-Kitty uses native background opacity `0.22` so its black background does not hide the glass. Dynamic background opacity is enabled. Existing windows started with an opaque rendering surface can require a new terminal window. Reloading the configuration alone did not change the existing opaque surface during verification. Whole-window opacity also affects text, while native background opacity does not. Game mode disables glass and forces compositor opacity to `1`, but Kitty retains native background transparency.
+The readability correction has backups in `~/.local/state/glass-backups/20261121-121035-contrast/`. It restores app opacity and reduces the pale tint without disabling glass.
+
+Kitty uses native background opacity `0.55` to preserve glass without exposing too much wallpaper behind text. Dynamic background opacity is enabled. Reload the Kitty configuration to update existing transparent windows. Windows started with an opaque rendering surface can require a new terminal window. Whole-window opacity also affects text, while native background opacity does not. Game mode disables glass and forces compositor opacity to `1`, but Kitty retains native background transparency.
 
 Darkly supplies Qt transparency through `kdeglobals` and `darklyrc`. Zed can also expose glass through its transparent theme. Whole-window opacity makes opaque application content translucent too, including its text. Increase opacity in Settings when text needs more contrast.
 
