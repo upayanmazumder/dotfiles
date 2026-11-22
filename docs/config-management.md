@@ -199,7 +199,10 @@ Sonder no longer accepts subnet routes. `RouteAll` is false, no exit node is set
 Normal internet traffic keeps the wlan0 default route.
 
 OpenSSH listens only on loopback port 22 and the two Tailscale addresses on port 2222, from `etc/ssh/sshd_config.d/10-sonder-tailnet.conf`.
-Tailscale SSH keeps tailnet port 22. `etc/systemd/system/sshd.service.d/10-tailscale.conf` orders sshd after tailscaled so the tailnet addresses exist at boot.
+Tailscale SSH keeps tailnet port 22. `etc/systemd/system/sshd.service.d/10-tailscale.conf` orders sshd after tailscaled.
+The service runs `tailscale wait --timeout=60s` before starting OpenSSH. This waits for the interface and its addresses.
+Service ordering alone does not guarantee address readiness. Without the wait, OpenSSH can start with only loopback listeners.
+If the wait times out, systemd retries after five seconds.
 UFW allows TCP 2222 and 5900 only on `tailscale0`. KDE Connect and hotspot rules stay unchanged.
 
 Add the Android public key to `~/.ssh/authorized_keys`. Keep password authentication until a phone key login succeeds, then set `PasswordAuthentication no` in the same drop-in.
