@@ -20,6 +20,18 @@ The live Zed settings contain a private API key, and the live rclone config cont
 
 The hotspot script reads two lines from `~/.config/hotspot/credentials`: SSID, then passphrase. The file has mode `600` and stays outside Git. The Quickshell toggle uses `status`, `stop`, `restart`, and `--daemon`. Status returns `0` for an active AP, `1` when stopped, and `2` when the daemon loses its AP channel. The button offers restart for state `2`. Restart recomputes the current upstream channel. No automatic network or suspend hook restarts the hotspot.
 
+### Private VPS administration
+
+The workstation SSH alias `vps` uses the VPS Tailscale address, not its public address.
+Keep the existing SSH identity and `IdentitiesOnly yes` in the local `~/.ssh/config`.
+The cluster repository owns the provider firewall and recovery instructions.
+Public SSH and Kubernetes API access are blocked. Public application ingress remains separate.
+The SSH configuration stays private and outside the synchronization allowlist.
+Do not copy its host addresses or identity paths into this repository.
+After a workstation restore, restore the local SSH alias and start Tailscale before connecting.
+The 2026-11-22 change passed private SSH and Kubernetes API checks.
+
+
 ## End-4 base
 
 Install end-4 from its upstream project and use its chosen revision as the base. Its `hyprland.lua` loads `hyprland/*` and then `custom/*`, so `custom/` is the stable user extension point. Quickshell runs as `qs -c ii` in the current session. Rebase local Quickshell changes onto the upstream version before deploying. Keep the patch and any required owned modules synchronized.
