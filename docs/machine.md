@@ -14,6 +14,19 @@ Sonder runs CachyOS with Hyprland. The login shell is fish. SDDM starts the acti
 
 Some live applications keep independent settings outside this curated mirror. Examples include Neovim, Atuin, GTK themes, and browser profiles. Review each file for secrets and generated state before adding it. Not every file under `~/.config` is safe to publish.
 
+## Isolated contributor runtimes
+
+Rocket.Chat development uses Node 24.22.3 from mise without changing the global Node selection.
+Install that runtime with `mise install node@24.22.3`.
+Select it only in the development shell:
+
+```sh
+export PATH="$HOME/.local/share/mise/installs/node/24.22.3/bin:$PATH"
+```
+
+Python contributor environments remain inside their repository checkouts.
+Do not import virtual environments, dependency caches, or generated application state into this repository.
+
 ## Boundaries
 
 This repository does not own package defaults, generated Quickshell state, browser profiles, credentials, personal images, or private service environment files. Selected systemd units can refer to private environment files, but those files must remain outside Git. Hardware-specific `/etc` files need review before installation on another machine. GRUB configuration and hooks require a separate boot check before deployment.
