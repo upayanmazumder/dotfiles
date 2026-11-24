@@ -1,6 +1,6 @@
 # GRUB boot loader configuration
 
-GRUB_DEFAULT='cachyos-esp-b'
+GRUB_DEFAULT='cachyos-esp-a'
 GRUB_TIMEOUT='5'
 GRUB_DISTRIBUTOR='CachyOS'
 GRUB_CMDLINE_LINUX_DEFAULT='panic=10 hung_task_panic=1 log_buf_len=8M nvme_load=YES splash loglevel=3 resume=UUID=bc715af5-53ed-470a-8033-48b4cd1858bb'
