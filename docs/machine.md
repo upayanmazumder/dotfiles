@@ -143,6 +143,11 @@ cp -- scripts/gaming/rdr2-780m.xml "$settings"
 ```
 
 Start the game directly through Steam.
+Set RDR2's Steam launch option to `mangohud %command%` to enable the performance overlay.
+Restart the game after changing this option.
+The configured overlay toggle is Right Shift + F12.
+Steam stores this option in private `userdata/*/config/localconfig.vdf`.
+Do not copy that file into this repository because it contains account credentials.
 Do not combine this preset with the generic `game-launch` wrapper.
 That wrapper adds spatial FSR scaling, which differs from the game's temporal FSR 2 reconstruction.
 Keep the charger connected.
