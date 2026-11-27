@@ -33,6 +33,7 @@ cantarell-fonts
 capitaine-cursors
 chntpw
 claude-desktop
+cli11
 cloudflare-warp-bin
 cloudflared
 coolercontrol
@@ -233,6 +234,7 @@ unzip
 vim
 vlc
 vlc-plugins-all
+vulkan-headers
 vulkan-tools
 wayvnc
 wev

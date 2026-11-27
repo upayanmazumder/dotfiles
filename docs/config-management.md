@@ -61,6 +61,36 @@ Live preferences and saved personal data remain local. Do not copy unrelated pre
 
 Run `/usr/lib/qt6/bin/qmllint --only-explicit-categories --syntax error` on changed QML files. Verify the running shell and the rendered widgets before committing.
 
+### Desktop performance
+
+`services/HyprlandData.qml` combines compositor events within 100 milliseconds.
+It waits for existing queries before another refresh. Continuous events do not postpone the next update.
+Each collector compares its response with the previous response before parsing JSON or updating bindings.
+This prevents repeated workspace, monitor, and wallpaper calculations when the data does not change.
+The initial refresh remains immediate. Existing widgets and visual effects remain enabled.
+
+The audio watcher is an on-demand diagnostic tool, not a login service.
+Disable its former automatic startup when deploying the updated unit:
+
+```sh
+systemctl --user disable --now audio-debug-watcher.service
+systemctl --user daemon-reload
+```
+
+Start a capture with `systemctl --user start audio-debug-watcher.service`.
+The capture stops after ten minutes and does not restart.
+The logs remain in `~/.local/state/audio-debug/`.
+
+`paseo.service` restarts after failures, with a thirty-second delay.
+It allows three starts within five minutes. A normal daemon stop does not trigger another start.
+The 2026-11-27 failure came from an empty `~/.paseo/paseo.pid`, not another daemon.
+Stop the service before inspecting that file. Preserve it privately only after confirming no daemon owns it.
+Never remove a valid lock for a running daemon.
+
+The obsolete `no-mistakes-daemon-1422d9e2.service` is disabled because its cached executable no longer exists.
+Its state and logs remain intact. Restore the executable before enabling the service again.
+
+
 ## Nothing Liquid glass
 
 The glass comes from `shlok-shinde/nothing-liquid`. The shell material uses dotfiles commit `c1c730608a55129ce07e407d365f3675d8d1f009`. The compositor plugin uses `shlok-shinde/hyprglass` commit `93dbe1907391b12699b57040ed694e4dc851a1e5`.

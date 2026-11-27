@@ -7103,3 +7103,91 @@ index 13cf7af4..0cd1a98a 100644
      }
  
  
+diff --git a/services/HyprlandData.qml b/services/HyprlandData.qml
+--- a/services/HyprlandData.qml
++++ b/services/HyprlandData.qml
+@@ -83,13 +83,27 @@
+         updateAll();
+     }
+ 
++    Timer {
++        id: refreshTimer
++        interval: 100
++        onTriggered: {
++            // Wait for the current queries, then fetch the latest state.
++            if (getClients.running || getMonitors.running || getLayers.running
++                    || getWorkspaces.running || getActiveWorkspace.running) {
++                start();
++                return;
++            }
++            root.updateAll();
++        }
++    }
++
+     Connections {
+         target: Hyprland
+ 
+         function onRawEvent(event) {
+-            // console.log("Hyprland raw event:", event.name);
+             if (["openlayer", "closelayer", "screencast"].includes(event.name)) return;
+-            updateAll()
++            // Starting an active timer does not postpone an update under continuous events.
++            refreshTimer.running = true;
+         }
+     }
+ 
+@@ -98,7 +112,10 @@
+         command: ["hyprctl", "clients", "-j"]
+         stdout: StdioCollector {
+             id: clientsCollector
++            property string previousText: ""
+             onStreamFinished: {
++                if (text === previousText) return;
++                previousText = text;
+                 root.windowList = JSON.parse(clientsCollector.text)
+                 let tempWinByAddress = {};
+                 for (var i = 0; i < root.windowList.length; ++i) {
+@@ -116,7 +133,10 @@
+         command: ["hyprctl", "monitors", "-j"]
+         stdout: StdioCollector {
+             id: monitorsCollector
++            property string previousText: ""
+             onStreamFinished: {
++                if (text === previousText) return;
++                previousText = text;
+                 root.monitors = JSON.parse(monitorsCollector.text);
+             }
+         }
+@@ -127,7 +147,10 @@
+         command: ["hyprctl", "layers", "-j"]
+         stdout: StdioCollector {
+             id: layersCollector
++            property string previousText: ""
+             onStreamFinished: {
++                if (text === previousText) return;
++                previousText = text;
+                 root.layers = JSON.parse(layersCollector.text);
+             }
+         }
+@@ -138,7 +161,10 @@
+         command: ["hyprctl", "workspaces", "-j"]
+         stdout: StdioCollector {
+             id: workspacesCollector
++            property string previousText: ""
+             onStreamFinished: {
++                if (text === previousText) return;
++                previousText = text;
+                 var rawWorkspaces = JSON.parse(workspacesCollector.text);
+                 // Filter out invalid workspace ids (e.g. lock-screen temp workspace 2147483647 - N)
+                 root.workspaces = rawWorkspaces.filter(ws => ws.id >= 1 && ws.id <= 100);
+@@ -158,7 +184,10 @@
+         command: ["hyprctl", "activeworkspace", "-j"]
+         stdout: StdioCollector {
+             id: activeWorkspaceCollector
++            property string previousText: ""
+             onStreamFinished: {
++                if (text === previousText) return;
++                previousText = text;
+                 root.activeWorkspace = JSON.parse(activeWorkspaceCollector.text);
+             }
+         }

@@ -71,3 +71,38 @@ paru -S --needed --noconfirm $(packages/aur.txt entries)   # skipped if paru mis
 It is idempotent -- re-running installs nothing new if the lists haven't
 changed. This is the command to run after `git pull` if `packages/*.txt`
 changed upstream (e.g. from another session).
+
+## Quickshell and Qt updates
+
+Quickshell uses private Qt APIs. Rebuild it after a Qt update when its startup log reports a version mismatch.
+Reinstalling the same repository binary does not rebuild it.
+
+The 2026-11-27 repair rebuilt Quickshell `0.3.2` against Qt `6.12.1`.
+The local package version is `0.3.2-1.2`. Pacman manages the installed files.
+The build directory is `~/.cache/quickshell-qt-rebuild/`.
+The source archive passed SHA-256 verification:
+
+```text
+f14115a73c9fff6aa6399f924b632e88c3ce2cead2657f814a7825341f35baad
+```
+
+Use the [Arch package recipe](https://gitlab.archlinux.org/archlinux/packaging/packages/quickshell/-/raw/main/PKGBUILD) for the installed release.
+Review the recipe before execution. Do not disable its source verification.
+For this rebuild, `pkgrel` changed to `1.2`, and `CMAKE_BUILD_TYPE` changed to `Release`.
+The distributor is `Sonder local Qt rebuild`, with `DISTRIBUTOR_DEBUGINFO_AVAILABLE=No`.
+Keep the default features, including jemalloc and crash handling.
+The additional build dependencies are `cli11` and `vulkan-headers`.
+
+Build as the normal user with two compiler jobs:
+
+```sh
+cd ~/.cache/quickshell-qt-rebuild
+CMAKE_BUILD_PARALLEL_LEVEL=2 nice -n 10 makepkg --noconfirm --nocheck
+sudo pacman -U ./quickshell-0.3.2-1.2-x86_64.pkg.tar.zst
+qs kill -c ii
+qs -c ii -d
+```
+
+Save work before restarting the shell. Do not restart Hyprland for this repair.
+Check the new shell log for a Qt mismatch warning.
+Keep source archives, build output, and package binaries outside Git.

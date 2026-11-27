@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # audio-debug-watcher.sh
 #
-# Persistent watcher that logs everything that could explain "audio
+# On-demand watcher that logs everything that could explain "audio
 # pauses / breaks sometimes". Four parallel capture sources, all writing
 # timestamped, tagged lines to one log file:
 #
@@ -19,9 +19,9 @@
 #            streams and that is a prime suspect for audible pauses.
 #
 # Logs: $XDG_STATE_HOME/audio-debug/audio-debug.log (rotated at 20MB,
-# keeps 3 generations: .log, .log.1, .log.2, .log.3). The systemd unit
-# audio-debug-watcher.service keeps this alive across reboots; the same
-# lines also reach the journal under that unit name.
+# keeps 3 generations: .log, .log.1, .log.2, .log.3). Start the systemd unit
+# audio-debug-watcher.service manually for a capture of at most 10 minutes.
+# The unit does not start at login.
 #
 # Grep hints:
 #   "paused|Corked|state.*(idle|error)"  -- stream pauses

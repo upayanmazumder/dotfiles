@@ -3,14 +3,15 @@ Description=Paseo daemon (supervisor + worker)
 Documentation=https://paseo.sh/docs
 After=network-online.target
 Wants=network-online.target
-StartLimitIntervalSec=0
+StartLimitIntervalSec=300
+StartLimitBurst=3
 
 [Service]
 Type=simple
 ExecStart=%h/.npm-global/bin/paseo daemon start --foreground
 Environment=PATH=/home/upayan/.npm-global/bin:/home/upayan/.opencode/bin:/home/upayan/.bun/bin:/home/upayan/Scripts/bin:/home/upayan/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl:/usr/lib/rustup/bin
-Restart=always
-RestartSec=3
+Restart=on-failure
+RestartSec=30
 TimeoutStopSec=30
 KillMode=mixed
 
