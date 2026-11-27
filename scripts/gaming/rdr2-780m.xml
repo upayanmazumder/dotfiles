@@ -35,7 +35,7 @@
     <hdrSettingsMigrated value="true" />
   </graphics>
   <advancedGraphics>
-    <API>kSettingAPI_Vulkan</API>
+    <API>kSettingAPI_DX12</API>
     <locked value="false" />
     <asyncComputeEnabled value="false" />
     <transferQueuesEnabled value="true" />
@@ -88,10 +88,10 @@
   <video>
     <adapterIndex value="0" />
     <outputIndex value="0" />
-    <resolutionIndex value="17" />
+    <resolutionIndex value="8" />
     <screenWidth value="1440" />
     <screenHeight value="900" />
-    <resolutionIndexWindowed value="11" />
+    <resolutionIndexWindowed value="8" />
     <screenWidthWindowed value="1440" />
     <screenHeightWindowed value="900" />
     <refreshRateIndex value="1" />

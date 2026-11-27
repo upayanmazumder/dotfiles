@@ -128,8 +128,11 @@ This reduces detail compared with native rendering.
 Ultra textures preserve surface detail.
 Reduced shadows, reflections, water physics, grass distance, and volumetrics reduce GPU load.
 Half-refresh VSync targets 60 FPS on the 120 Hz panel.
-The preset keeps Vulkan and disables MSAA, FXAA, motion blur, and tree tessellation.
+The preset uses DirectX 12 and disables MSAA, FXAA, motion blur, and tree tessellation.
 FSR 2 does not generate frames.
+The Vulkan configuration produced a black 3D scene while the HUD remained visible.
+DirectX 12 with FSR Quality is a diagnostic workaround, not a verified fix.
+Confirm scene rendering after restart before judging performance.
 
 Apply the preset only while the game is closed:
 
@@ -144,7 +147,7 @@ Do not combine this preset with the generic `game-launch` wrapper.
 That wrapper adds spatial FSR scaling, which differs from the game's temporal FSR 2 reconstruction.
 Keep the charger connected.
 Check Settings → Graphics after launch because the game can normalize resolution identifiers.
-Confirm 1440×900, FSR 2 Quality, and half-refresh VSync.
+Confirm Fullscreen, 120 Hz, 1440×900, FSR 2 Quality, and half-refresh VSync.
 Use the built-in benchmark before claiming a measured frame rate.
 Restore a saved `system.xml.before-780m-tuning-*` file to reverse the changes.
 
