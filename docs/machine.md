@@ -109,3 +109,43 @@ html, body { min-width: 340px; }
 ```
 
 The original file is at `~/.local/state/kdeconnect-ext-fix-20261120/popup.css.orig`. An extension update replaces `css/popup.css`, so reapply the rule after a version change.
+
+## Red Dead Redemption 2
+
+The HP Pavilion 14-EY0789AU uses a Ryzen 7 7840U and Radeon 780M integrated graphics.
+The GPU shares approximately 16 GB of system RAM.
+The Samsung SDC4197 OLED panel runs at 2880×1800 and 120 Hz.
+The panel supports adaptive refresh from 48 to 120 Hz, but the current compositor configuration disables it.
+The desktop uses SDR, so the game preset disables HDR.
+
+`scripts/gaming/rdr2-780m.xml` stores the reviewed graphics preset.
+It targets 60 FPS, not a guaranteed minimum.
+Gameplay FPS remains unmeasured.
+The preset uses 1440×900 output with FSR 2 Quality and 0.30 sharpening.
+FSR 2 Quality reconstructs approximately 960×600 internal rendering.
+The desktop scales the game output to the panel.
+This reduces detail compared with native rendering.
+Ultra textures preserve surface detail.
+Reduced shadows, reflections, water physics, grass distance, and volumetrics reduce GPU load.
+Half-refresh VSync targets 60 FPS on the 120 Hz panel.
+The preset keeps Vulkan and disables MSAA, FXAA, motion blur, and tree tessellation.
+FSR 2 does not generate frames.
+
+Apply the preset only while the game is closed:
+
+```sh
+settings="$HOME/.local/share/Steam/steamapps/compatdata/1174180/pfx/drive_c/users/steamuser/Documents/Rockstar Games/Red Dead Redemption 2/Settings/system.xml"
+cp -p -- "$settings" "$settings.before-780m-tuning-$(date +%Y%m%d-%H%M%S)"
+cp -- scripts/gaming/rdr2-780m.xml "$settings"
+```
+
+Start the game directly through Steam.
+Do not combine this preset with the generic `game-launch` wrapper.
+That wrapper adds spatial FSR scaling, which differs from the game's temporal FSR 2 reconstruction.
+Keep the charger connected.
+Check Settings → Graphics after launch because the game can normalize resolution identifiers.
+Confirm 1440×900, FSR 2 Quality, and half-refresh VSync.
+Use the built-in benchmark before claiming a measured frame rate.
+Restore a saved `system.xml.before-780m-tuning-*` file to reverse the changes.
+
+Reference: [FSR 2 image quality comparison](https://www.techpowerup.com/review/red-dead-redemption-2-dlss-vs-fsr-2-0-comparison/).
