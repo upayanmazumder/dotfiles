@@ -69,6 +69,28 @@ Each collector compares its response with the previous response before parsing J
 This prevents repeated workspace, monitor, and wallpaper calculations when the data does not change.
 The initial refresh remains immediate. Existing widgets and visual effects remain enabled.
 
+Do not leave the desktop shell under an assistant's process supervisor.
+Terminating Quickshell while it owns a session lock can leave an unusable solid-colour screen.
+The compositor keeps the session locked for security.
+Do not kill or restart Quickshell while the screen is locked.
+
+For an unlocked session, stop the old instance with `qs kill -c ii`.
+Wait until its process exits before starting a replacement.
+Then start the shell through the user manager:
+
+```sh
+systemd-run --user --collect --unit=quickshell-ii-session \
+  --property=PartOf=hyprland-session.target \
+  --property=After=hyprland-session.target \
+  --property=Restart=on-failure --property=RestartSec=2 \
+  --property=StartLimitIntervalSec=30 --property=StartLimitBurst=3 \
+  /usr/bin/qs -c ii
+```
+
+This transient service survives the assistant session and stops with the Hyprland session target.
+Normal login startup remains unchanged. A restart policy cannot guarantee recovery from an abandoned session lock.
+Check the actual lock screen with the user present. A window preview does not verify the lock protocol.
+
 The audio watcher is an on-demand diagnostic tool, not a login service.
 Disable its former automatic startup when deploying the updated unit:
 
